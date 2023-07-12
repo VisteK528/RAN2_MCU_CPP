@@ -14,12 +14,13 @@ public:
 
 class Endstop: public Sensor{
 public:
-    Endstop(uint8_t signal_pin, ENDSTOP_TYPE type);
+    Endstop(GPIO_PIN , ENDSTOP_TYPE type);
     Endstop() = default;
     ~Endstop() = default;
     bool checkSensor() override;
 private:
-    uint8_t signal_pin;
+    GPIO_TypeDef* signal_pin_port;
+    uint16_t signal_pin;
     ENDSTOP_TYPE type;
 
 };

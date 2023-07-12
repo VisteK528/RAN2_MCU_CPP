@@ -1,208 +1,123 @@
-#include "../include/joint.hpp"
+#include <algorithm>
+#include "../include/movement.hpp"
 
-Joint::Joint(std::unique_ptr<drivers::Driver> driver, std::shared_ptr<Endstop> sensor, uint16_t gear_teeth,
-             DIRECTION homing_direction) {
-    this->driver = std::move(driver);
+Movement::Movement(uint8_t motor_step, uint16_t driver_microstep, uint16_t motor_shaft_gear_teeth,
+                   uint16_t joint_gear_teeth) {
+    this->motor_step = motor_step;
+    this->driver_microstep = driver_microstep;
+    this->motor_shaft_gear_teeth = motor_shaft_gear_teeth;
+    this->joint_gear_teeth = joint_gear_teeth;
 
-    this->endstop = std::move(sensor);
-
-    this->gear_teeth = gear_teeth;
-    this->homing_direction = homing_direction;
-
-    this->movement = Movement(driver->getMotorResolution(), driver->getDriverResolution(), driver->getGearTeeth(), gear_teeth);
+    this->one_pulse_step = kit::deg2Rad((float)motor_step/(float)driver_microstep);
+    this->speed_gear_ratio = (float)motor_shaft_gear_teeth/float(joint_gear_teeth);
+    this->torque_gear_ratio = 1/speed_gear_ratio;
 }
 
-void Joint::setHomingSteps(uint16_t homing_steps) {
-    this->homing_steps = homing_steps;
+float Movement::motorVel(float phase_time) {
+    float term = (360.f/(float)motor_step) * (phase_time * (float)driver_microstep);
+    float angular_velocity = (2*(float)M_PI)/term;
+    return angular_velocity;
 }
 
-void Joint::setHomingVelocity(float homing_velocity) {
-    this->homing_velocity = homing_velocity;
+float Movement::phaseTime(float joint_ang_vel) {
+    float motor_ang_vel = motorVelFromJointVel(joint_ang_vel);
+    return one_pulse_step/motor_ang_vel;
 }
 
-void Joint::setHomingAcceleration(float homing_acceleration) {
-    this->homing_acceleration = homing_acceleration;
+float Movement::jointVelFromMotorVel(float motor_ang_vel) {
+    return motor_ang_vel * speed_gear_ratio;
 }
 
-void Joint::setMaxVelocity(float max_velocity) {
-    this->max_velocity = max_velocity;
+float Movement::motorVelFromJointVel(float joint_ang_vel) {
+    return joint_ang_vel / speed_gear_ratio;
 }
 
-void Joint::setMaxAcceleration(float max_acceleration) {
-    this->max_acceleration = max_acceleration;
+float Movement::getGearSpeedRatio() const {
+    return speed_gear_ratio;
 }
 
-void Joint::setMinPosition(float min_position) {
-    this->min_pos = min_position;
-}
+std::vector<float> Movement::calculateSteps(unsigned int steps, float max_speed, float acceleration) {
+    float motor_max_speed = motorVelFromJointVel(max_speed);
+    float motor_max_speed_delay = kit::seconds2Microseconds(one_pulse_step/motor_max_speed);
 
-void Joint::setMaxPosition(float max_position) {
-    this->max_pos = max_position;
-}
+    std::vector<float> delays;
+    float angle = one_pulse_step;
+    const float constant = 0.13568198123907316536355537605674;
 
-void Joint::setOffset(float offset) {
-    this->offset = offset;
-}
+    float c0 = 2000000.f * std::sqrt(2.f * angle / acceleration) * constant;
 
-void Joint::setBaseAngle(float base_angle) {
-    this->base_angle = base_angle;
-}
-
-unsigned int Joint::degrees2Steps(float degrees) {
-    int steps = ((degrees / (float)driver->getMotorResolution()) / (driver->getGearTeeth() / (float)gear_teeth)) * driver->getMotorResolution();
-    return steps;
-}
-
-void Joint::moveBySteps(unsigned int steps, DIRECTION direction, float max_velocity, float max_acceleration) {
-    std::vector<float> delays = movement.calculateSteps(steps, max_velocity, max_acceleration);
-
-    this->driver->setDirection(direction);
-
-    for(const float delay: delays){
-        this->driver->moveDelay(delay);
-    }
-}
-
-void Joint::move2Pos(float position) {
-    if(homed){
-        if(min_pos < position && position < max_pos){
-            float new_position = joint_position - position;
-
-            DIRECTION move_direction;
-            if(homing_direction == ANTICLOCKWISE){
-                if(new_position >= 0){
-                    move_direction = ANTICLOCKWISE;
-                }
-                else{
-                    move_direction = CLOCKWISE;
-                }
-            }
-            else{
-                if(new_position >= 0){
-                    move_direction = CLOCKWISE;
-                }
-                else{
-                    move_direction = ANTICLOCKWISE;
-                }
-            }
-
-            new_position = std::abs(new_position);
-            unsigned int steps = degrees2Steps(new_position);
-            moveBySteps(steps, move_direction, max_velocity, max_acceleration);
-            joint_position = position;
-        }
-    }
-}
-
-void Joint::homeJoint() {
-    DIRECTION first_direction;
-    DIRECTION second_direction;
-    if(homing_direction == ANTICLOCKWISE){
-        first_direction = ANTICLOCKWISE;
-        second_direction = CLOCKWISE;
+    int iterations = 0;
+    bool even = false;
+    if(steps % 2 == 0){
+        iterations = (int)steps/2;
+        even = true;
     }
     else{
-        first_direction = CLOCKWISE;
-        second_direction = ANTICLOCKWISE;
+        iterations = (int)steps/2 + 1;
     }
 
-    std::vector<float> acceleration_delays = movement.accelerateToVelocity(homing_velocity);
-    std::vector<float> acceleration_delays2 = movement.accelerateToVelocity(homing_velocity/5.f);
+    delays.reserve(iterations);
 
-    float phase_time1 = movement.phaseTime(homing_velocity);
-    float phase_time2 = movement.phaseTime(homing_velocity/5);
-
-    while(true){
-        driver->setDirection(first_direction);
-
-        for(const float delay: acceleration_delays){
-            driver->moveDelay(delay);
-
-            if(endstop->checkSensor()){
-                break;
-            }
+    float delay = 0;
+    for(int i = 0; i < iterations; i++){
+        delay = c0;
+        if(i > 0){
+            delay = delays[i - 1] - ((2.f * delays[i - 1]) / (4.f * i + 1));
         }
 
-        if(endstop->checkSensor()){
-            moveBySteps(homing_steps, second_direction, max_velocity, max_acceleration);
-
-            driver->setDirection(first_direction);
-
-            for(const float delay: acceleration_delays2){
-                driver->moveDelay(delay);
-
-                if(endstop->checkSensor()){
-                    break;
-                }
-            }
-            if(endstop->checkSensor()){
-                break;
-            }
-            else{
-                while(true){
-                    driver->moveDelay(phase_time2);
-
-                    if(endstop->checkSensor()){
-                        break;
-                    }
-                }
-                break;
-            }
+        if(delay < motor_max_speed_delay){
+            delay = motor_max_speed_delay;
         }
-        else{
-            while(true){
-                driver->moveDelay(phase_time1);
-
-                if(endstop->checkSensor()){
-                    break;
-                }
-            }
-
-            if(endstop->checkSensor()){
-                moveBySteps(homing_steps, second_direction, max_velocity, max_acceleration);
-
-                driver->setDirection(first_direction);
-
-                for(const float delay: acceleration_delays2){
-                    driver->moveDelay(delay);
-
-                    if(endstop->checkSensor()){
-                        break;
-                    }
-                }
-                if(endstop->checkSensor()){
-                    break;
-                }
-                else{
-                    while(true){
-                        driver->moveDelay(phase_time2);
-
-                        if(endstop->checkSensor()){
-                            break;
-                        }
-                    }
-                    break;
-                }
-            }
-        }
+        delays.push_back(delay);
     }
-    joint_position = 0;
-    if(offset != 0){
-        if(offset < 0){
-            float offset_abs = std::abs(offset);
 
-            float gear_ratio = movement.getGearSpeedRatio();
-
-            int steps = (((offset_abs / driver->getMotorResolution()) / gear_ratio) * driver->getDriverResolution());
-
-            moveBySteps(steps, first_direction, max_velocity, max_acceleration);
-        }
-        else{
-            move2Pos(offset);
-        }
+    std::vector<float> delays_buffer;
+    delays_buffer = delays;
+    if(!even){
+        delays_buffer.pop_back();
     }
-    joint_position = 0;
-    homed = true;
+    std::reverse(delays_buffer.begin(), delays_buffer.end());
+
+    delays.insert(delays.end(), delays_buffer.begin(), delays_buffer.end());
+
+    std::vector<float> seconds_delays;
+    seconds_delays.reserve(delays.size());
+    for(const float copy_delay: delays){
+        seconds_delays.push_back(kit::microseconds2Seconds(copy_delay));
+    }
+
+    return seconds_delays;
 }
 
+std::vector<float> Movement::accelerateToVelocity(float velocity, float acceleration) {
+    std::vector<float> delays;
+    float angle = one_pulse_step;
+    const float constant = 0.13568198123907316536355537605674;
 
+    float c0 = 2000000.f * std::sqrt(2.f * angle / acceleration) * constant;
+
+    int i = 0;
+    float delay = 0;
+
+    while(true){
+        delay = c0;
+        if(i > 0){
+            delay = delays[i - 1] - ((2.f * delays[i - 1]) / (4.f * i + 1));
+        }
+        delays.push_back(delay);
+
+        float current_velocity = jointVelFromMotorVel(motorVel(kit::microseconds2Seconds(delay)));
+        if(current_velocity >= velocity){
+            break;
+        }
+        i++;
+    }
+
+    std::vector<float> seconds_delays;
+    seconds_delays.reserve(delays.size());
+    for(const float copy_delay: delays){
+        seconds_delays.push_back(kit::microseconds2Seconds(copy_delay));
+    }
+
+    return seconds_delays;
+}

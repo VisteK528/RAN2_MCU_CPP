@@ -1,5 +1,5 @@
-#ifndef ROBOTARMNUMBER2CPP_MOVEMENT_HPP
-#define ROBOTARMNUMBER2CPP_MOVEMENT_HPP
+#ifndef RAN2_MCU_CPP_MOVEMENT_HPP
+#define RAN2_MCU_CPP_MOVEMENT_HPP
 
 #include <iostream>
 #include <vector>
@@ -31,4 +31,4 @@ private:
 
 };
 
-#endif //ROBOTARMNUMBER2CPP_MOVEMENT_HPP
+#endif //RAN2_MCU_CPP_MOVEMENT_HPP

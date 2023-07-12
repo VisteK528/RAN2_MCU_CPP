@@ -34,6 +34,11 @@ extern "C" {
 
 /* USER CODE BEGIN Private defines */
 
+typedef struct{
+    GPIO_TypeDef* gpio_port;
+    uint16_t gpio_pin;
+} GPIO_PIN;
+
 /* USER CODE END Private defines */
 
 void MX_GPIO_Init(void);

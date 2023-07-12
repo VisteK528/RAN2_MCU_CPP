@@ -1,10 +1,11 @@
-#ifndef ROBOTARMNUMBER2CPP_JOINT_HPP
-#define ROBOTARMNUMBER2CPP_JOINT_HPP
+#ifndef RAN2_MCU_CPP_JOINT_HPP
+#define RAN2_MCU_CPP_JOINT_HPP
 
 #include "driver.hpp"
 #include "movement.hpp"
 #include "sensors.hpp"
 #include <iostream>
+#include <memory>
 #include "../../Inc/gpio.h"
 
 using namespace drivers;
@@ -53,4 +54,4 @@ private:
     bool homed = false;
 };
 
-#endif //ROBOTARMNUMBER2CPP_JOINT_HPP
+#endif // RAN2_MCU_CPP_DRIVER_HPP
