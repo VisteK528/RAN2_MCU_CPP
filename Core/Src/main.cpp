@@ -160,7 +160,7 @@ int main(void)
     std::shared_ptr<Endstop> waist_endstop = std::make_shared<Endstop>(waist_endstop_pin, ENDSTOP_TYPE::DOWN);
 
     std::unique_ptr<Joint> waist_joint = std::make_unique<Joint>(waist_driver, waist_endstop, 125,
-                                                                 drivers::DIRECTION::CLOCKWISE);
+                                                                 drivers::DIRECTION::ANTICLOCKWISE);
 
     waist_joint->homeJoint();
 
