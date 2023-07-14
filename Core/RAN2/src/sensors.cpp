@@ -7,17 +7,19 @@ Endstop::Endstop(GPIO_PIN pin, ENDSTOP_TYPE type) {
 };
 
 bool Endstop::checkSensor() {
-    bool state = HAL_GPIO_ReadPin(signal_pin_port, signal_pin);
+    GPIO_PinState state = HAL_GPIO_ReadPin(signal_pin_port, signal_pin);
 
     if(type == ENDSTOP_TYPE::UP){
-        if(state){
+        if(state == GPIO_PIN_SET){
             return false;
         }
         return true;
     }
 
-    if(HAL_GPIO_ReadPin(signal_pin_port, signal_pin)){
-        return true;
+    else{
+    	if(state == GPIO_PIN_RESET){
+    		return false;
+    	}
+    	return true;
     }
-    return false;
 }

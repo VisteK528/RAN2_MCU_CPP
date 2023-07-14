@@ -157,7 +157,7 @@ int main(void)
     waist_endstop_pin.gpio_pin = J1_ENDSTOP_Pin;
 
     std::unique_ptr<Driver> waist_driver = std::make_unique<drivers::TMC2209>(waist_step, waist_dir, waist_en, 20, 0.9f, 8);
-    std::shared_ptr<Endstop> waist_endstop = std::make_shared<Endstop>(waist_endstop_pin, ENDSTOP_TYPE::DOWN);
+    std::shared_ptr<Endstop> waist_endstop = std::make_shared<Endstop>(waist_endstop_pin, ENDSTOP_TYPE::UP);
 
     std::unique_ptr<Joint> waist_joint = std::make_unique<Joint>(waist_driver, waist_endstop, 125,
                                                                  drivers::DIRECTION::ANTICLOCKWISE);

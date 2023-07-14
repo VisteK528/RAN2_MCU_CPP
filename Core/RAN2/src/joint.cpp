@@ -59,7 +59,7 @@ void Joint::moveBySteps(unsigned int steps, DIRECTION direction, float max_veloc
     this->driver->setDirection(direction);
 
     for(const float delay: delays){
-        this->driver->moveDelay(delay*1000000);
+        this->driver->moveDelay(delay);
     }
 }
 
