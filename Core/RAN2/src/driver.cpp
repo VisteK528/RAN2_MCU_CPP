@@ -6,12 +6,13 @@ drivers::Driver::Driver(GPIO_PIN step, GPIO_PIN direction, GPIO_PIN enable, uint
     this->direction = direction;
     this->enable = enable;
     this->gear_teeth = gear_teeth;
+    this->motor_resolution = motor_resolution;
     this->driver_resolution = driver_resolution;
 }
 
 void drivers::Driver::moveDelay(float delay) {
     HAL_GPIO_WritePin(step.gpio_port, step.gpio_pin, GPIO_PIN_RESET);
-    HAL_Delay(delay);
+    HAL_Delay(delay*1000);
     HAL_GPIO_WritePin(step.gpio_port, step.gpio_pin, GPIO_PIN_SET);
 }
 

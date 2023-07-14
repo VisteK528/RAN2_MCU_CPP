@@ -13,6 +13,7 @@ Robot::Robot(std::vector<std::unique_ptr<Joint>>& joints) {
 void Robot::home() {
 
     for(const auto & joint : joints){
+        printf("Homing joint...\n");
         joint.second->homeJoint();
     }
     homed = true;
@@ -42,8 +43,8 @@ Robot buildRobot(){
     std::unique_ptr<Driver> waist_driver = std::make_unique<drivers::TMC2209>(waist_step, waist_dir, waist_en, 20, 0.9f, 8);
     std::shared_ptr<Endstop> waist_endstop = std::make_shared<Endstop>(waist_endstop_pin, ENDSTOP_TYPE::UP);
 
-    std::unique_ptr<Joint> waist_joint = std::make_unique<Joint>(std::move(waist_driver), waist_endstop, 125,
-                                                                 drivers::DIRECTION::CLOCKWISE);
+    std::unique_ptr<Joint> waist_joint = std::make_unique<Joint>(waist_driver, waist_endstop, 125,
+                                                                 drivers::DIRECTION::ANTICLOCKWISE);
     waist_joint->setMinPosition(-1);
     waist_joint->setMaxPosition(358);
 
@@ -65,7 +66,7 @@ Robot buildRobot(){
     std::unique_ptr<Driver> shoulder_driver = std::make_unique<DM556>(shoulder_step, shoulder_dir, shoulder_en, 8, 1.8f, 20);
     std::shared_ptr<Endstop> shoulder_endstop = std::make_shared<Endstop>(shoulder_endstop_pin, ENDSTOP_TYPE::UP);
 
-    std::unique_ptr<Joint> shoulder_joint = std::make_unique<Joint>(std::move(shoulder_driver), shoulder_endstop, 149,
+    std::unique_ptr<Joint> shoulder_joint = std::make_unique<Joint>(shoulder_driver, shoulder_endstop, 149,
                                                                     drivers::DIRECTION::CLOCKWISE);
     shoulder_joint->setHomingVelocity(0.12);
     shoulder_joint->setMaxAcceleration(0.05);
@@ -87,7 +88,7 @@ Robot buildRobot(){
     std::unique_ptr<Driver> elbow_driver = std::make_unique<drivers::TMC2209>(elbow_step, elbow_dir, elbow_en, 20, 0.9, 8);
     std::shared_ptr<Endstop> elbow_endstop = std::make_shared<Endstop>(elbow_endstop_pin, ENDSTOP_TYPE::UP);
 
-    std::unique_ptr<Joint> elbow_joint = std::make_unique<Joint>(std::move(elbow_driver), elbow_endstop, 62,
+    std::unique_ptr<Joint> elbow_joint = std::make_unique<Joint>(elbow_driver, elbow_endstop, 62,
                                                                  drivers::DIRECTION::ANTICLOCKWISE);
 
     elbow_joint->setMaxPosition(70);
@@ -108,7 +109,7 @@ Robot buildRobot(){
     std::unique_ptr<Driver> wrist_roll_driver = std::make_unique<drivers::TMC2209>(roll_step, roll_dir, roll_en, 1, 1.8f, 8);
     std::shared_ptr<Endstop> wrist_roll_endstop = std::make_shared<Endstop>(roll_endstop_pin, ENDSTOP_TYPE::UP);
 
-    std::unique_ptr<Joint> wrist_roll_joint = std::make_unique<Joint>(std::move(wrist_roll_driver), wrist_roll_endstop,
+    std::unique_ptr<Joint> wrist_roll_joint = std::make_unique<Joint>(wrist_roll_driver, wrist_roll_endstop,
                                                                       1, drivers::DIRECTION::ANTICLOCKWISE);
 
     wrist_roll_joint->setHomingAcceleration(0.25);
@@ -133,7 +134,7 @@ Robot buildRobot(){
     std::unique_ptr<Driver> wrist_pitch_driver = std::make_unique<drivers::TMC2209>(roll_step, roll_dir, roll_en, 20, 1.8f, 8);
     std::shared_ptr<Endstop> wrist_pitch_endstop = std::make_shared<Endstop>(roll_endstop_pin, ENDSTOP_TYPE::UP);
 
-    std::unique_ptr<Joint> wrist_pitch_joint = std::make_unique<Joint>(std::move(wrist_pitch_driver),
+    std::unique_ptr<Joint> wrist_pitch_joint = std::make_unique<Joint>(wrist_pitch_driver,
                                                                        wrist_pitch_endstop, 40,
                                                                        drivers::DIRECTION::ANTICLOCKWISE);
     wrist_pitch_joint->setHomingAcceleration(0.2);

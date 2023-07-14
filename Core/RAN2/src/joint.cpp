@@ -1,6 +1,6 @@
 #include "../include/joint.hpp"
 
-Joint::Joint(std::unique_ptr<drivers::Driver> driver, std::shared_ptr<Endstop> sensor, uint16_t gear_teeth,
+Joint::Joint(std::unique_ptr<drivers::Driver>& driver, std::shared_ptr<Endstop> sensor, uint16_t gear_teeth,
              DIRECTION homing_direction) {
     this->driver = std::move(driver);
 
@@ -9,7 +9,7 @@ Joint::Joint(std::unique_ptr<drivers::Driver> driver, std::shared_ptr<Endstop> s
     this->gear_teeth = gear_teeth;
     this->homing_direction = homing_direction;
 
-    this->movement = Movement(driver->getMotorResolution(), driver->getDriverResolution(), driver->getGearTeeth(), gear_teeth);
+    this->movement = Movement(this->driver->getMotorResolution(), this->driver->getDriverResolution(), this->driver->getGearTeeth(), gear_teeth);
 }
 
 void Joint::setHomingSteps(uint16_t homing_steps) {
@@ -59,7 +59,7 @@ void Joint::moveBySteps(unsigned int steps, DIRECTION direction, float max_veloc
     this->driver->setDirection(direction);
 
     for(const float delay: delays){
-        this->driver->moveDelay(delay);
+        this->driver->moveDelay(delay*1000000);
     }
 }
 
@@ -117,7 +117,6 @@ void Joint::homeJoint() {
 
         for(const float delay: acceleration_delays){
             driver->moveDelay(delay);
-
             if(endstop->checkSensor()){
                 break;
             }

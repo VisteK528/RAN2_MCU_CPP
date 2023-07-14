@@ -1,20 +1,21 @@
 #include <algorithm>
 #include "../include/movement.hpp"
 
-Movement::Movement(uint8_t motor_step, uint16_t driver_microstep, uint16_t motor_shaft_gear_teeth,
+Movement::Movement(float motor_step, uint16_t driver_microstep, uint16_t motor_shaft_gear_teeth,
                    uint16_t joint_gear_teeth) {
     this->motor_step = motor_step;
     this->driver_microstep = driver_microstep;
     this->motor_shaft_gear_teeth = motor_shaft_gear_teeth;
     this->joint_gear_teeth = joint_gear_teeth;
 
-    this->one_pulse_step = kit::deg2Rad((float)motor_step/(float)driver_microstep);
-    this->speed_gear_ratio = (float)motor_shaft_gear_teeth/float(joint_gear_teeth);
+    this->one_pulse_step = kit::deg2Rad(motor_step/(float)driver_microstep);
+    //printf("One pulse step: %f\tMotor step: %f\tDriver Microstep: %f\n", one_pulse_step, motor_step, (float)driver_microstep);
+    this->speed_gear_ratio = (float)motor_shaft_gear_teeth/(float)joint_gear_teeth;
     this->torque_gear_ratio = 1/speed_gear_ratio;
 }
 
 float Movement::motorVel(float phase_time) {
-    float term = (360.f/(float)motor_step) * (phase_time * (float)driver_microstep);
+    float term = (360.f/motor_step) * (phase_time * (float)driver_microstep);
     float angular_velocity = (2*(float)M_PI)/term;
     return angular_velocity;
 }
@@ -92,12 +93,13 @@ std::vector<float> Movement::calculateSteps(unsigned int steps, float max_speed,
 std::vector<float> Movement::accelerateToVelocity(float velocity, float acceleration) {
     std::vector<float> delays;
     float angle = one_pulse_step;
-    const float constant = 0.13568198123907316536355537605674;
+    const float constant = 0.13568198123907316536355537605674f;
 
     float c0 = 2000000.f * std::sqrt(2.f * angle / acceleration) * constant;
 
     int i = 0;
     float delay = 0;
+    float current_velocity = 0;
 
     while(true){
         delay = c0;
@@ -106,10 +108,11 @@ std::vector<float> Movement::accelerateToVelocity(float velocity, float accelera
         }
         delays.push_back(delay);
 
-        float current_velocity = jointVelFromMotorVel(motorVel(kit::microseconds2Seconds(delay)));
+        current_velocity = jointVelFromMotorVel(motorVel(kit::microseconds2Seconds(delay)));
         if(current_velocity >= velocity){
             break;
         }
+        //printf("Delay: %f\tCurrent vel: %f\tDesired vel: %f\n", motorVel(kit::microseconds2Seconds(delay)), current_velocity, velocity);
         i++;
     }
 

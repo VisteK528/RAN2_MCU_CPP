@@ -144,12 +144,31 @@ int main(void)
     printf("RAN2 Software MCU©\n");
     printf("Starting...\n");
 
-    /*Robot my_robot = buildRobot();
-    my_robot.home();*/
+   //Robot my_robot = buildRobot();
+    GPIO_PIN waist_step, waist_dir, waist_en, waist_endstop_pin;
+    waist_step.gpio_port = J1_STEP_GPIO_Port;
+    waist_step.gpio_pin = J1_STEP_Pin;
+    waist_dir.gpio_port = J1_DIR_GPIO_Port;
+    waist_dir.gpio_pin = J1_DIR_Pin;
+    waist_en.gpio_port = J1_EN_GPIO_Port;
+    waist_en.gpio_pin = J1_EN_Pin;
+
+    waist_endstop_pin.gpio_port = J1_ENDSTOP_GPIO_Port;
+    waist_endstop_pin.gpio_pin = J1_ENDSTOP_Pin;
+
+    std::unique_ptr<Driver> waist_driver = std::make_unique<drivers::TMC2209>(waist_step, waist_dir, waist_en, 20, 0.9f, 8);
+    std::shared_ptr<Endstop> waist_endstop = std::make_shared<Endstop>(waist_endstop_pin, ENDSTOP_TYPE::DOWN);
+
+    std::unique_ptr<Joint> waist_joint = std::make_unique<Joint>(waist_driver, waist_endstop, 125,
+                                                                 drivers::DIRECTION::CLOCKWISE);
+
+    waist_joint->homeJoint();
 
     while (1)
     {
         //HAL_UART_Transmit(&huart2, (uint8_t*)message, strlen(message), HAL_MAX_DELAY);
+       // my_robot.home();
+
         uint8_t uart_value;
         if (HAL_UART_Receive(&huart2, &uart_value, 1, 0) == HAL_OK){
             if(line_append(uart_value) == 0){

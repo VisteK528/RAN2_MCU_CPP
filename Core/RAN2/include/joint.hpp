@@ -12,7 +12,7 @@ using namespace drivers;
 
 class Joint{
 public:
-    Joint(std::unique_ptr<Driver> driver, std::shared_ptr<Endstop> sensor, uint16_t gear_teeth, DIRECTION homing_direction);
+    Joint(std::unique_ptr<Driver>& driver, std::shared_ptr<Endstop> sensor, uint16_t gear_teeth, DIRECTION homing_direction);
     void setHomingSteps(uint16_t homing_steps);
     void setHomingVelocity(float homing_velocity);
     void setHomingAcceleration(float homing_acceleration);

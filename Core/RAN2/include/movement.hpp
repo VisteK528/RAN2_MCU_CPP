@@ -8,7 +8,7 @@
 
 class Movement{
 public:
-    Movement(uint8_t motor_step, uint16_t driver_microstep, uint16_t motor_shaft_gear_teeth, uint16_t joint_gear_teeth);
+    Movement(float motor_step, uint16_t driver_microstep, uint16_t motor_shaft_gear_teeth, uint16_t joint_gear_teeth);
     Movement() = default;
     float motorVel(float phase_time);
     float phaseTime(float joint_ang_vel);
@@ -18,7 +18,7 @@ public:
     std::vector<float> calculateSteps(unsigned int steps, float max_speed, float acceleration);
     std::vector<float> accelerateToVelocity(float velocity, float acceleration = 0.5);
 private:
-    uint8_t motor_step;
+    float motor_step;
     uint16_t driver_microstep;
     float one_pulse_step;
 
