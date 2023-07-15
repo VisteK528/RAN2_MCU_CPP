@@ -18,10 +18,10 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
+#include "spi.h"
 #include "usart.h"
 #include "gpio.h"
 #include <stdio.h>
-
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
@@ -103,7 +103,6 @@ uint8_t line_append(uint8_t value)
     return 1;
 }
 
-
 /* USER CODE END 0 */
 
 /**
@@ -135,6 +134,7 @@ int main(void)
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
   MX_USART2_UART_Init();
+  MX_SPI2_Init();
   /* USER CODE BEGIN 2 */
 
   /* USER CODE END 2 */
@@ -144,7 +144,7 @@ int main(void)
     printf("RAN2 Software MCU©\n");
     printf("Starting...\n");
 
-   //Robot my_robot = buildRobot();
+    //Robot my_robot = buildRobot();
     GPIO_PIN waist_step, waist_dir, waist_en, waist_endstop_pin;
     waist_step.gpio_port = J1_STEP_GPIO_Port;
     waist_step.gpio_pin = J1_STEP_Pin;
@@ -167,7 +167,7 @@ int main(void)
     while (1)
     {
         //HAL_UART_Transmit(&huart2, (uint8_t*)message, strlen(message), HAL_MAX_DELAY);
-       // my_robot.home();
+        // my_robot.home();
 
         uint8_t uart_value;
         if (HAL_UART_Receive(&huart2, &uart_value, 1, 0) == HAL_OK){
@@ -185,14 +185,14 @@ int main(void)
                             switch ((int)value) {
                                 case 28:                // Home joints
                                     printf("%c  %f\n", letter, value);
-                                break;
+                                    break;
 
                             }
                             break;
                         case 'M':
                             switch ((int)value) {
                                 case 30:                // End of the programme
-                                break;
+                                    break;
                             }
                             break;
                         default:
