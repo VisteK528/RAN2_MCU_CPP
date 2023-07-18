@@ -18,18 +18,15 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
+#include "i2c.h"
 #include "spi.h"
 #include "usart.h"
 #include "gpio.h"
-#include <stdio.h>
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 
-#include "../RAN2/include/robot.hpp"
-#include "../RAN2/include/read_gcode.h"
-#include <string>
-#include <cstring>
+#include "alt_main.h"
 
 /* USER CODE END Includes */
 
@@ -40,8 +37,6 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-
-#define LINE_MAX_LENGTH	80
 
 /* USER CODE END PD */
 
@@ -64,44 +59,6 @@ void SystemClock_Config(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-
-int __io_putchar(int ch)
-{
-    if (ch == '\n') {
-        uint8_t ch2 = '\r';
-        HAL_UART_Transmit(&huart2, &ch2, 1, HAL_MAX_DELAY);
-    }
-
-    HAL_UART_Transmit(&huart2, (uint8_t*)&ch, 1, HAL_MAX_DELAY);
-    return 1;
-}
-
-static char line_buffer[LINE_MAX_LENGTH + 1];
-static uint32_t line_length;
-
-uint8_t line_append(uint8_t value)
-{
-    if (value == '\r' || value == '\n') {
-        // odebraliśmy znak końca linii
-        if (line_length > 0) {
-            // jeśli bufor nie jest pusty to dodajemy 0 na końcu linii
-            line_buffer[line_length] = '\0';
-            // przetwarzamy dane
-            // zaczynamy zbieranie danych od nowa
-            line_length = 0;
-            return 0;
-        }
-    }
-    else {
-        if (line_length >= LINE_MAX_LENGTH) {
-            // za dużo danych, usuwamy wszystko co odebraliśmy dotychczas
-            line_length = 0;
-        }
-        // dopisujemy wartość do bufora
-        line_buffer[line_length++] = value;
-    }
-    return 1;
-}
 
 /* USER CODE END 0 */
 
@@ -135,81 +92,22 @@ int main(void)
   MX_GPIO_Init();
   MX_USART2_UART_Init();
   MX_SPI2_Init();
+  MX_I2C1_Init();
   /* USER CODE BEGIN 2 */
+
+  alt_main();
 
   /* USER CODE END 2 */
 
-    /* Infinite loop */
-    /* USER CODE BEGIN WHILE */
-    printf("RAN2 Software MCU©\n");
-    printf("Starting...\n");
+  /* Infinite loop */
+  /* USER CODE BEGIN WHILE */
+  while (1)
+  {
+    /* USER CODE END WHILE */
 
-    //Robot my_robot = buildRobot();
-    GPIO_PIN waist_step, waist_dir, waist_en, waist_endstop_pin;
-    waist_step.gpio_port = J1_STEP_GPIO_Port;
-    waist_step.gpio_pin = J1_STEP_Pin;
-    waist_dir.gpio_port = J1_DIR_GPIO_Port;
-    waist_dir.gpio_pin = J1_DIR_Pin;
-    waist_en.gpio_port = J1_EN_GPIO_Port;
-    waist_en.gpio_pin = J1_EN_Pin;
-
-    waist_endstop_pin.gpio_port = J1_ENDSTOP_GPIO_Port;
-    waist_endstop_pin.gpio_pin = J1_ENDSTOP_Pin;
-
-    std::unique_ptr<Driver> waist_driver = std::make_unique<drivers::TMC2209>(waist_step, waist_dir, waist_en, 20, 0.9f, 8);
-    std::shared_ptr<Endstop> waist_endstop = std::make_shared<Endstop>(waist_endstop_pin, ENDSTOP_TYPE::UP);
-
-    std::unique_ptr<Joint> waist_joint = std::make_unique<Joint>(waist_driver, waist_endstop, 125,
-                                                                 drivers::DIRECTION::ANTICLOCKWISE);
-
-    waist_joint->homeJoint();
-
-    while (1)
-    {
-        //HAL_UART_Transmit(&huart2, (uint8_t*)message, strlen(message), HAL_MAX_DELAY);
-        // my_robot.home();
-
-        uint8_t uart_value;
-        if (HAL_UART_Receive(&huart2, &uart_value, 1, 0) == HAL_OK){
-            if(line_append(uart_value) == 0){
-
-                // Check which command to choose
-                char letter;
-                float value;
-                uint16_t counter = 0;
-                while(parseMessage(&letter, &value, line_buffer, &counter) == 1){
-                    switch(letter){
-                        case 'N':
-                            break;
-                        case 'G':
-                            switch ((int)value) {
-                                case 28:                // Home joints
-                                    printf("%c  %f\n", letter, value);
-                                    break;
-
-                            }
-                            break;
-                        case 'M':
-                            switch ((int)value) {
-                                case 30:                // End of the programme
-                                    break;
-                            }
-                            break;
-                        default:
-                            break;
-                    }
-                }
-            }
-
-        }
-
-
-        /* USER CODE END WHILE */
-
-
-        /* USER CODE BEGIN 3 */
-    }
-    /* USER CODE END 3 */
+    /* USER CODE BEGIN 3 */
+  }
+  /* USER CODE END 3 */
 }
 
 /**
