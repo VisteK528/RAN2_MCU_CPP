@@ -1,6 +1,6 @@
 #include "../include/joint.hpp"
 
-Joint::Joint(std::unique_ptr<drivers::Driver>& driver, std::shared_ptr<Endstop> sensor, uint16_t gear_teeth,
+Joint::Joint(std::unique_ptr<Driver>& driver, std::shared_ptr<Endstop> sensor, uint16_t gear_teeth,
              DIRECTION homing_direction) {
     this->driver = std::move(driver);
 

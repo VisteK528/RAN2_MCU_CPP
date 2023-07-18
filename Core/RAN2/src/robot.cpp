@@ -40,11 +40,11 @@ Robot buildRobot(){
     waist_endstop_pin.gpio_port = J1_ENDSTOP_GPIO_Port;
     waist_endstop_pin.gpio_pin = J1_ENDSTOP_Pin;
 
-    std::unique_ptr<Driver> waist_driver = std::make_unique<drivers::TMC2209>(waist_step, waist_dir, waist_en, 20, 0.9f, 8);
+    std::unique_ptr<Driver> waist_driver = std::make_unique<TMC2209>(waist_step, waist_dir, waist_en, 20, 0.9f);
     std::shared_ptr<Endstop> waist_endstop = std::make_shared<Endstop>(waist_endstop_pin, ENDSTOP_TYPE::UP);
 
     std::unique_ptr<Joint> waist_joint = std::make_unique<Joint>(waist_driver, waist_endstop, 125,
-                                                                 drivers::DIRECTION::ANTICLOCKWISE);
+                                                                 DIRECTION::ANTICLOCKWISE);
     waist_joint->setMinPosition(-1);
     waist_joint->setMaxPosition(358);
 
@@ -67,7 +67,7 @@ Robot buildRobot(){
     std::shared_ptr<Endstop> shoulder_endstop = std::make_shared<Endstop>(shoulder_endstop_pin, ENDSTOP_TYPE::UP);
 
     std::unique_ptr<Joint> shoulder_joint = std::make_unique<Joint>(shoulder_driver, shoulder_endstop, 149,
-                                                                    drivers::DIRECTION::CLOCKWISE);
+                                                                    DIRECTION::CLOCKWISE);
     shoulder_joint->setHomingVelocity(0.12);
     shoulder_joint->setMaxAcceleration(0.05);
     shoulder_joint->setMaxPosition(171);
@@ -85,11 +85,11 @@ Robot buildRobot(){
     elbow_endstop_pin.gpio_port = J3_ENDSTOP_GPIO_Port;
     elbow_endstop_pin.gpio_pin = J3_ENDSTOP_Pin;
     
-    std::unique_ptr<Driver> elbow_driver = std::make_unique<drivers::TMC2209>(elbow_step, elbow_dir, elbow_en, 20, 0.9, 8);
+    std::unique_ptr<Driver> elbow_driver = std::make_unique<TMC2209>(elbow_step, elbow_dir, elbow_en, 20, 0.9, 8);
     std::shared_ptr<Endstop> elbow_endstop = std::make_shared<Endstop>(elbow_endstop_pin, ENDSTOP_TYPE::UP);
 
     std::unique_ptr<Joint> elbow_joint = std::make_unique<Joint>(elbow_driver, elbow_endstop, 62,
-                                                                 drivers::DIRECTION::ANTICLOCKWISE);
+                                                                 DIRECTION::ANTICLOCKWISE);
 
     elbow_joint->setMaxPosition(70);
     elbow_joint->setBaseAngle(50.3);
@@ -106,11 +106,11 @@ Robot buildRobot(){
     roll_endstop_pin.gpio_port = J4_ENDSTOP_GPIO_Port;
     roll_endstop_pin.gpio_pin = J4_ENDSTOP_Pin;
     
-    std::unique_ptr<Driver> wrist_roll_driver = std::make_unique<drivers::TMC2209>(roll_step, roll_dir, roll_en, 1, 1.8f, 8);
+    std::unique_ptr<Driver> wrist_roll_driver = std::make_unique<TMC2209>(roll_step, roll_dir, roll_en, 1, 1.8f, 8);
     std::shared_ptr<Endstop> wrist_roll_endstop = std::make_shared<Endstop>(roll_endstop_pin, ENDSTOP_TYPE::UP);
 
     std::unique_ptr<Joint> wrist_roll_joint = std::make_unique<Joint>(wrist_roll_driver, wrist_roll_endstop,
-                                                                      1, drivers::DIRECTION::ANTICLOCKWISE);
+                                                                      1, DIRECTION::ANTICLOCKWISE);
 
     wrist_roll_joint->setHomingAcceleration(0.25);
     wrist_roll_joint->setHomingVelocity(0.5);
@@ -131,12 +131,12 @@ Robot buildRobot(){
     pitch_endstop_pin.gpio_port = J5_ENDSTOP_GPIO_Port;
     pitch_endstop_pin.gpio_pin = J5_ENDSTOP_Pin;
     
-    std::unique_ptr<Driver> wrist_pitch_driver = std::make_unique<drivers::TMC2209>(roll_step, roll_dir, roll_en, 20, 1.8f, 8);
+    std::unique_ptr<Driver> wrist_pitch_driver = std::make_unique<TMC2209>(roll_step, roll_dir, roll_en, 20, 1.8f, 8);
     std::shared_ptr<Endstop> wrist_pitch_endstop = std::make_shared<Endstop>(roll_endstop_pin, ENDSTOP_TYPE::UP);
 
     std::unique_ptr<Joint> wrist_pitch_joint = std::make_unique<Joint>(wrist_pitch_driver,
                                                                        wrist_pitch_endstop, 40,
-                                                                       drivers::DIRECTION::ANTICLOCKWISE);
+                                                                       DIRECTION::ANTICLOCKWISE);
     wrist_pitch_joint->setHomingAcceleration(0.2);
     wrist_pitch_joint->setHomingVelocity(0.4);
     wrist_pitch_joint->setHomingSteps(100);

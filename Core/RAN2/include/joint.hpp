@@ -8,8 +8,6 @@
 #include <memory>
 #include "../../Inc/gpio.h"
 
-using namespace drivers;
-
 class Joint{
 public:
     Joint(std::unique_ptr<Driver>& driver, std::shared_ptr<Endstop> sensor, uint16_t gear_teeth, DIRECTION homing_direction);
