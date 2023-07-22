@@ -79,7 +79,7 @@ void drivers::Driver::initializeMovement(uint8_t joint_number, int mode, float m
 
             movement_data[joint_number].accel_count = 0;
             movement_data[joint_number].decel_val = -(float)iterations*0.6f;
-            movement_data[joint_number].decel_start = (float)iterations*0.4f;
+            movement_data[joint_number].decel_start = iterations+movement_data[joint_number].decel_val;
             movement_data[joint_number].mode = mode;
             movement_data[joint_number].isMoving = true;
             HAL_TIM_Base_Start_IT(&htim10);

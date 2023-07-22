@@ -67,17 +67,22 @@ int alt_main(){
 
     std::unique_ptr<Joint> waist_joint = std::make_unique<Joint>(joint_number, waist_driver, waist_endstop, 125,
                                                                  drivers::DIRECTION::ANTICLOCKWISE);
-    waist_joint->setMaxVelocity(0.8);
+    waist_joint->setMaxVelocity(3.2);
     waist_joint->setMaxAcceleration(1.5);
 
     waist_joint->homeJoint();
-    waist_joint->move2Pos(90, true);
+    //waist_joint->move2Pos(90, true);
 
     while (1)
     {
         uint8_t uart_value;
         if (HAL_UART_Receive(&huart2, &uart_value, 1, 0) == HAL_OK){
+            if(uart_value != '\0'){
+                printf("Got: %c\n", uart_value);
+            }
+
             if(line_append(uart_value) == 0){
+                printf("Command: %s\n", line_buffer);
 
                 // Check which command to choose
                 char letter;
@@ -87,6 +92,7 @@ int alt_main(){
                     switch(letter){
                         case 'N':
                             waist_joint->move2Pos(value, true);
+                            HAL_GPIO_TogglePin(LD2_GPIO_Port, LD2_Pin);
                             printf("Done\n");
                             break;
                         case 'G':
@@ -108,7 +114,8 @@ int alt_main(){
                     }
                 }
             }
-
+            fflush(stdin);
+            fflush(stdout);
         }
     }
 }

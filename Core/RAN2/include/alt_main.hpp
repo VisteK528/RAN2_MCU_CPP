@@ -2,7 +2,6 @@
 #define RAN2_MCU_CPP_ALT_MAIN_HPP
 
 #include "../../Inc/main.h"
-#include "../../Inc/spi.h"
 #include "../../Inc/usart.h"
 #include "../../Inc/gpio.h"
 #include "../../Inc/tim.h"
