@@ -14,7 +14,7 @@ public:
 
     void home();
     void homeJoint(int joint_number);
-    void wait(float seconds);
+    void wait(uint32_t seconds);
 private:
 
     std::unordered_map<int, std::unique_ptr<Joint>> joints;

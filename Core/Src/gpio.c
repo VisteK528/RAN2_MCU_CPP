@@ -96,14 +96,21 @@ void MX_GPIO_Init(void)
 
   /*Configure GPIO pins : PBPin PBPin PBPin PBPin
                            PBPin PBPin PBPin PBPin
-                           PBPin PBPin PBPin */
+                           PBPin PBPin */
   GPIO_InitStruct.Pin = J6_DIR_Pin|J6_STEP_Pin|LCD_RST_Pin|LCD_DC_Pin
-                          |LCD_CS_Pin|J1_STEP_Pin|J1_DIR_Pin|J5_STEP_Pin
-                          |J5_DIR_Pin|J5_EN_Pin|J5_ENDSTOP_Pin;
+                          |LCD_CS_Pin|J1_DIR_Pin|J5_STEP_Pin|J5_DIR_Pin
+                          |J5_EN_Pin|J5_ENDSTOP_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+
+  /*Configure GPIO pin : PtPin */
+  GPIO_InitStruct.Pin = J1_STEP_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
+  HAL_GPIO_Init(J1_STEP_GPIO_Port, &GPIO_InitStruct);
 
   /*Configure GPIO pin : PtPin */
   GPIO_InitStruct.Pin = J4_ENDSTOP_Pin;

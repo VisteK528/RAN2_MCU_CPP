@@ -9,7 +9,6 @@ Movement::Movement(float motor_step, uint16_t driver_microstep, uint16_t motor_s
     this->joint_gear_teeth = joint_gear_teeth;
 
     this->one_pulse_step = kit::deg2Rad(motor_step/(float)driver_microstep);
-    //printf("One pulse step: %f\tMotor step: %f\tDriver Microstep: %f\n", one_pulse_step, motor_step, (float)driver_microstep);
     this->speed_gear_ratio = (float)motor_shaft_gear_teeth/(float)joint_gear_teeth;
     this->torque_gear_ratio = 1/speed_gear_ratio;
 }
@@ -37,10 +36,20 @@ float Movement::getGearSpeedRatio() const {
     return speed_gear_ratio;
 }
 
+float Movement::getMinDelay(float max_speed) {
+    return kit::seconds2Microseconds(one_pulse_step/motorVelFromJointVel(max_speed));
+}
+
+float Movement::getStartDelay(float acceleration) const {
+    float angle = one_pulse_step;
+    const float constant = 0.13568198123907316536355537605674f;
+
+    return 2000000.f * std::sqrt(2.f * angle / acceleration) * constant;
+}
+
 std::vector<float> Movement::calculateSteps(unsigned int steps, float max_speed, float acceleration) {
     float motor_max_speed = motorVelFromJointVel(max_speed);
     float motor_max_speed_delay = kit::seconds2Microseconds(one_pulse_step/motor_max_speed);
-
     std::vector<float> delays;
     float angle = one_pulse_step;
     const float constant = 0.13568198123907316536355537605674;
@@ -112,7 +121,7 @@ std::vector<float> Movement::accelerateToVelocity(float velocity, float accelera
         if(current_velocity >= velocity){
             break;
         }
-        //printf("Delay: %f\tCurrent vel: %f\tDesired vel: %f\n", motorVel(kit::microseconds2Seconds(delay)), current_velocity, velocity);
+        //printf("Delay: %f\tCurrent vel: %f\tDesired vel: %f\n", delay/1000.f, current_velocity, velocity);
         i++;
     }
 
