@@ -1,7 +1,6 @@
 #ifndef ROBOTARMNUMBER2CPP_ROBOT_HPP
 #define ROBOTARMNUMBER2CPP_ROBOT_HPP
 
-#include <iostream>
 #include "joint.hpp"
 #include <memory>
 #include <unordered_map>
