@@ -12,9 +12,9 @@ Robot::Robot(std::vector<std::unique_ptr<Joint>>& joints) {
 
 void Robot::home() {
 
-    for(const auto & joint : joints){
-        printf("Homing joint...\n");
-        joint.second->homeJoint();
+    for(int i = 0; i < joints.size(); i++){
+        printf("Homing joint: %d\n", i);
+        this->joints[i]->homeJoint();
     }
     homed = true;
 }
@@ -25,6 +25,20 @@ void Robot::homeJoint(int joint_number) {
 
 void Robot::wait(uint32_t ms) {
     HAL_Delay(ms);
+}
+
+void Robot::moveJoint(int joint_number, float position) {
+    joints[joint_number]->move2Pos(position, true);
+}
+
+void Robot::move2Default() {
+    if(homed){
+        joints[0]->move2Pos(270, false);
+        joints[1]->move2Pos(60, false);
+        joints[2]->move2Pos(35, false);
+        //joints[3]->move2Pos(90, false);
+        joints[4]->move2Pos(90, false);
+    }
 }
 
 Robot buildRobot(){
@@ -48,8 +62,8 @@ Robot buildRobot(){
     waist_joint->setMinPosition(-1);
     waist_joint->setMaxPosition(358);
 
-    waist_joint->setMaxVelocity(0.2);
-    waist_joint->setMaxAcceleration(0.5);
+    waist_joint->setMaxVelocity(0.8);
+    waist_joint->setMaxAcceleration(2);
 
     // Shoulder
     GPIO_PIN shoulder_step, shoulder_dir, shoulder_en, shoulder_endstop_pin;
@@ -68,10 +82,10 @@ Robot buildRobot(){
 
     std::unique_ptr<Joint> shoulder_joint = std::make_unique<Joint>(1, shoulder_driver, shoulder_endstop, 149,
                                                                     drivers::DIRECTION::CLOCKWISE);
-    shoulder_joint->setHomingVelocity(0.12);
+    shoulder_joint->setHomingVelocity(0.08);
     shoulder_joint->setMaxAcceleration(0.05);
     shoulder_joint->setMaxPosition(171);
-    shoulder_joint->setOffset(15);
+    shoulder_joint->setOffset(14);
 
     // Elbow
     GPIO_PIN elbow_step, elbow_dir, elbow_en, elbow_endstop_pin;
@@ -131,8 +145,8 @@ Robot buildRobot(){
     pitch_endstop_pin.gpio_port = J5_ENDSTOP_GPIO_Port;
     pitch_endstop_pin.gpio_pin = J5_ENDSTOP_Pin;
     
-    std::unique_ptr<Driver> wrist_pitch_driver = std::make_unique<drivers::TMC2209>(4, roll_step, roll_dir, roll_en, 20, 1.8f, 8);
-    std::shared_ptr<Endstop> wrist_pitch_endstop = std::make_shared<Endstop>(roll_endstop_pin, ENDSTOP_TYPE::UP);
+    std::unique_ptr<Driver> wrist_pitch_driver = std::make_unique<drivers::TMC2209>(4, pitch_step, pitch_dir, pitch_en, 20, 1.8f, 8);
+    std::shared_ptr<Endstop> wrist_pitch_endstop = std::make_shared<Endstop>(pitch_endstop_pin, ENDSTOP_TYPE::UP);
 
     std::unique_ptr<Joint> wrist_pitch_joint = std::make_unique<Joint>(4, wrist_pitch_driver,
                                                                        wrist_pitch_endstop, 40,

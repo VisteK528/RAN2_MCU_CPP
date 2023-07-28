@@ -173,6 +173,7 @@ void Joint::homeJoint() {
         }
     }
     joint_position = 0;
+    homed = true;
     if(offset != 0){
         if(offset < 0){
             unsigned int steps = degrees2Steps(std::abs(offset));
@@ -183,7 +184,6 @@ void Joint::homeJoint() {
         }
     }
     joint_position = 0;
-    homed = true;
 }
 
 

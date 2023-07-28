@@ -12,6 +12,8 @@ public:
     Robot()=default;
 
     void home();
+    void move2Default();
+    void moveJoint(int joint_number, float position);
     void homeJoint(int joint_number);
     void wait(uint32_t seconds);
 private:

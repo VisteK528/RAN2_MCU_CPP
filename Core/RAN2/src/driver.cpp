@@ -69,7 +69,6 @@ void drivers::Driver::initializeMovement(uint8_t joint_number, int mode, float m
             movement_data[joint_number].accel_count = 0;
             movement_data[joint_number].mode = mode;
             movement_data[joint_number].isMoving = true;
-            HAL_TIM_Base_Start_IT(&htim10);
             break;
         case 1:
             movement_data[joint_number].run_state = 0;
@@ -82,17 +81,33 @@ void drivers::Driver::initializeMovement(uint8_t joint_number, int mode, float m
             movement_data[joint_number].decel_start = iterations+movement_data[joint_number].decel_val;
             movement_data[joint_number].mode = mode;
             movement_data[joint_number].isMoving = true;
-            HAL_TIM_Base_Start_IT(&htim10);
             break;
         case 2:
             movement_data[joint_number].step_delay = d0;
             movement_data[joint_number].mode = mode;
             movement_data[joint_number].isMoving = true;
-            HAL_TIM_Base_Start_IT(&htim10);
             break;
         default:
             break;
 
+    }
+
+    if(joint_number >= 0 && joint_number < 6 && mode >= 0 && mode < 3){
+        if(joint_number == 0){
+            HAL_TIM_Base_Start_IT(&htim10);
+        }
+        else if(joint_number == 1){
+            HAL_TIM_Base_Start_IT(&htim4);
+        }
+        else if(joint_number == 2){
+            HAL_TIM_Base_Start_IT(&htim3);
+        }
+        else if(joint_number == 3){
+            HAL_TIM_Base_Start_IT(&htim5);
+        }
+        else if(joint_number == 4){
+            HAL_TIM_Base_Start_IT(&htim9);
+        }
     }
 
     /*  CPU Frequency: 80MHz
@@ -114,8 +129,8 @@ bool drivers::Driver::getMovement(uint8_t joint_number) {
     return movement_data[joint_number].isMoving;
 }
 
-static void accelerateToVelocity(uint8_t joint_number, TIM_HandleTypeDef *htim){
-    HAL_GPIO_TogglePin(J1_STEP_GPIO_Port, J1_STEP_Pin);
+static void accelerateToVelocity(GPIO_PIN step_pin, uint8_t joint_number, TIM_HandleTypeDef *htim){
+    HAL_GPIO_TogglePin(step_pin.gpio_port, step_pin.gpio_pin);
     movement_data[joint_number].accel_count++;
     movement_data[joint_number].step_count++;
 
@@ -134,18 +149,55 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
     uint8_t joint_number = 255;
     if (htim->Instance == TIM10) {
         joint_number = 0;
+    } else if(htim->Instance == TIM4){
+        joint_number = 1;
+    }
+    else if(htim->Instance == TIM3){
+        joint_number = 2;
+    }
+    else if(htim->Instance == TIM5){
+        joint_number = 3;
+    }
+    else if(htim->Instance == TIM9){
+        joint_number = 4;
     }
 
     if(joint_number < 6){
+        GPIO_PIN step_pin;
+        if(joint_number == 0){
+            step_pin.gpio_port = J1_STEP_GPIO_Port;
+            step_pin.gpio_pin = J1_STEP_Pin;
+        }
+        else if(joint_number == 1){
+            step_pin.gpio_port = J2_STEP_GPIO_Port;
+            step_pin.gpio_pin = J2_STEP_Pin;
+        }
+        else if(joint_number == 2){
+            step_pin.gpio_port = J3_STEP_GPIO_Port;
+            step_pin.gpio_pin = J3_STEP_Pin;
+        }
+        else if(joint_number == 3){
+            step_pin.gpio_port = J4_STEP_GPIO_Port;
+            step_pin.gpio_pin = J4_STEP_Pin;
+        }
+        else if(joint_number == 4){
+            step_pin.gpio_port = J5_STEP_GPIO_Port;
+            step_pin.gpio_pin = J5_STEP_Pin;
+        }
+        else if(joint_number == 5){
+            step_pin.gpio_port = J6_STEP_GPIO_Port;
+            step_pin.gpio_pin = J6_STEP_Pin;
+        }
+        
         switch (movement_data[joint_number].mode) {
             case 0:
-                accelerateToVelocity(joint_number, htim);
+                accelerateToVelocity(step_pin, joint_number, htim);
                 break;
             case 1:
                 switch(movement_data[joint_number].run_state) {
                     case 0:
                         // Accel
-                        HAL_GPIO_TogglePin(J1_STEP_GPIO_Port, J1_STEP_Pin);
+                        HAL_GPIO_TogglePin(step_pin.gpio_port, step_pin.gpio_pin);
                         movement_data[joint_number].accel_count++;
                         movement_data[joint_number].step_count++;
 
@@ -165,7 +217,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
                     case 1:
                         // Run
 
-                        HAL_GPIO_TogglePin(J1_STEP_GPIO_Port, J1_STEP_Pin);;
+                        HAL_GPIO_TogglePin(step_pin.gpio_port, step_pin.gpio_pin);
                         movement_data[joint_number].step_count++;
                         movement_data[joint_number].step_delay = movement_data[joint_number].min_delay;
 
@@ -176,7 +228,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
                         break;
                     case 2:
                         // Decel
-                        HAL_GPIO_TogglePin(J1_STEP_GPIO_Port, J1_STEP_Pin);
+                        HAL_GPIO_TogglePin(step_pin.gpio_port, step_pin.gpio_pin);
                         movement_data[joint_number].accel_count++;
                         movement_data[joint_number].step_count++;
 
@@ -192,14 +244,14 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
                         break;
                     case 3:
                         // Stop
-                        HAL_GPIO_TogglePin(J1_STEP_GPIO_Port, J1_STEP_Pin);
+                        HAL_GPIO_TogglePin(step_pin.gpio_port, step_pin.gpio_pin);
                         HAL_TIM_Base_Stop_IT(htim);
                         movement_data[joint_number].isMoving = false;
                         break;
                 }
                 break;
             case 2:
-                HAL_GPIO_TogglePin(J1_STEP_GPIO_Port, J1_STEP_Pin);
+                HAL_GPIO_TogglePin(step_pin.gpio_port, step_pin.gpio_pin);
                 if(!movement_data[joint_number].isMoving){
                     HAL_TIM_Base_Stop_IT(htim);
                 }

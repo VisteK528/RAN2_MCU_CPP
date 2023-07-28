@@ -4,7 +4,6 @@
 #include "../RAN2/include/robot.hpp"
 #include "../RAN2/include/read_gcode.h"
 #include "main.h"
-#include "spi.h"
 #include "usart.h"
 #include "gpio.h"
 #include "i2c.h"

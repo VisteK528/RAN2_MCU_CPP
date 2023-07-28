@@ -48,30 +48,11 @@ int alt_main(){
     printf("RAN2 Software MCU©\n");
     printf("Starting...\n");
 
-    //Robot my_robot = buildRobot();
-    GPIO_PIN waist_step, waist_dir, waist_en, waist_endstop_pin;
-    waist_step.gpio_port = J1_STEP_GPIO_Port;
-    waist_step.gpio_pin = J1_STEP_Pin;
-    waist_dir.gpio_port = J1_DIR_GPIO_Port;
-    waist_dir.gpio_pin = J1_DIR_Pin;
-    waist_en.gpio_port = J1_EN_GPIO_Port;
-    waist_en.gpio_pin = J1_EN_Pin;
+    Robot my_robot = buildRobot();
+    my_robot.home();
+    my_robot.move2Default();
+    HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_SET);
 
-    waist_endstop_pin.gpio_port = J1_ENDSTOP_GPIO_Port;
-    waist_endstop_pin.gpio_pin = J1_ENDSTOP_Pin;
-
-    uint8_t joint_number = 0;
-
-    std::unique_ptr<Driver> waist_driver = std::make_unique<TMC2209>(joint_number, waist_step, waist_dir, waist_en, 20, 0.9f, 8);
-    std::shared_ptr<Endstop> waist_endstop = std::make_shared<Endstop>(waist_endstop_pin, ENDSTOP_TYPE::UP);
-
-    std::unique_ptr<Joint> waist_joint = std::make_unique<Joint>(joint_number, waist_driver, waist_endstop, 125,
-                                                                 drivers::DIRECTION::ANTICLOCKWISE);
-    waist_joint->setMaxVelocity(3.2);
-    waist_joint->setMaxAcceleration(1.5);
-
-    waist_joint->homeJoint();
-    //waist_joint->move2Pos(90, true);
 
     while (1)
     {
@@ -91,8 +72,6 @@ int alt_main(){
                 while(parseMessage(&letter, &value, line_buffer, &counter) == 1){
                     switch(letter){
                         case 'N':
-                            waist_joint->move2Pos(value, true);
-                            HAL_GPIO_TogglePin(LD2_GPIO_Port, LD2_Pin);
                             printf("Done\n");
                             break;
                         case 'G':
