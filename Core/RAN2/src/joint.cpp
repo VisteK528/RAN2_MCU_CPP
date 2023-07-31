@@ -106,7 +106,6 @@ void Joint::move2Pos(float position, bool blocking) {
 
             new_position = fabsf(new_position);
             unsigned int steps = degrees2Steps(new_position);
-            printf("Steps: %d\n", steps);
             moveJointBySteps(steps, move_direction, max_velocity, max_acceleration, blocking);
             joint_position = position;
         }
