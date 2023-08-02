@@ -69,21 +69,21 @@ int alt_main(){
             {EE_LENGTH, 5},
     };
 
-    float32_t offsets[6] = {0, 0, 0, 0, 0, 0};
-    float32_t angles[6];
+    float offsets[6] = {0, 0, 0, 0, 0, 0};
+    float angles[6];
 
     Algorithm6Dof algorithm(map, offsets);
 
-    float32_t rot_mat_d[9] = {
-            1, 0, 0,
+    float rot_mat_d[9] = {
             0, 1, 0,
+            1, 0, 0,
             0, 0, 1
     };
 
-    arm_matrix_instance_f32 rot_mat;
-    arm_mat_init_f32(&rot_mat, 3, 3, rot_mat_d);
+    matrix_f32 rot_mat;
+    matrix_init_f32(&rot_mat, 3, 3, rot_mat_d);
 
-    algorithm.inverseKinematics(20, 20, 20, &rot_mat, angles);
+    /*algorithm.inverseKinematics(15, 20, 20, &rot_mat, angles);
     for(int i = 0; i < 6; i++){
         printf("Theta%d: %f\n", i, rad2Deg(angles[i]));
     }
@@ -94,7 +94,7 @@ int alt_main(){
 
     for(int i = 0; i < 6; i++){
         printf("Point: %d\tX: %f\tY: %f\tZ:%f:\n", i, points[i].x, points[i].y, points[i].z);
-    }
+    }*/
 
     while (1)
     {
@@ -118,6 +118,27 @@ int alt_main(){
                             }
                             else{
                                 my_robot.home();
+                            }
+                        }
+                        else if((int)value == 1){
+                            float values[3];
+                            int i = 0;
+                            while(parseMessage(&letter, &value, line_buffer, &counter) == 1){
+                                values[i] = value;
+                                i++;
+                            }
+
+                            algorithm.inverseKinematics(values[0], values[1], values[2], &rot_mat, angles);
+                            for(int i = 0; i < 6; i++){
+                                printf("Theta%d: %f\n", i, rad2Deg(angles[i]));
+                            }
+
+                            coordinates points[6];
+
+                            algorithm.forwardKinematics(angles, points);
+
+                            for(int i = 0; i < 6; i++){
+                                printf("Point: %d\tX: %f\tY: %f\tZ:%f:\n", i, points[i].x, points[i].y, points[i].z);
                             }
                         }
                     }

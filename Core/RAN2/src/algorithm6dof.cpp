@@ -1,19 +1,19 @@
 #include <utility>
 #include "../include/algorithm6dof.hpp"
 
-Algorithm6Dof::Algorithm6Dof(LINK_MAP link_map, float32_t *offsets) {
+Algorithm6Dof::Algorithm6Dof(LINK_MAP link_map, float *offsets) {
     this->linkMap = std::move(link_map);
     this->offsets = offsets;
 }
 
 
-void Algorithm6Dof::inverseKinematics(float32_t x, float32_t y, float32_t z, arm_matrix_instance_f32 *rot_mat,
-                                      float32_t* angles) {
+void Algorithm6Dof::inverseKinematics(float x, float y, float z, matrix_f32* rot_mat,
+                                      float* angles) {
 
-    float32_t theta[6];
+    float theta[6];
     coordinates tcp, wcp, elbow;
-    float32_t hyp, long_hyp, short_hyp;
-    float32_t alfa, beta;
+    float hyp, long_hyp, short_hyp;
+    float alfa, beta;
 
     // Set position of the TCP(Tool center point)
     arm_position_points[5].x = x;
@@ -22,9 +22,9 @@ void Algorithm6Dof::inverseKinematics(float32_t x, float32_t y, float32_t z, arm
     tcp = arm_position_points[5];
 
     // Calculate position of the WCP (Wrist center point) by transforming the TCP coordinates using Rot0_6 matrix
-    wcp.x = tcp.x - linkMap[EE_LENGTH] * ((*rot_mat).pData)[0];
-    wcp.y = tcp.y - linkMap[EE_LENGTH] * ((*rot_mat).pData)[3];
-    wcp.z = tcp.z - linkMap[EE_LENGTH] * ((*rot_mat).pData)[6];
+    wcp.x = tcp.x - linkMap[EE_LENGTH] * rot_mat->p_data[0];
+    wcp.y = tcp.y - linkMap[EE_LENGTH] * rot_mat->p_data[3];
+    wcp.z = tcp.z - linkMap[EE_LENGTH] * rot_mat->p_data[6];
     arm_position_points[4] = wcp;
 
     // Calculate the angle for J1 (Waist)
@@ -56,62 +56,62 @@ void Algorithm6Dof::inverseKinematics(float32_t x, float32_t y, float32_t z, arm
     arm_position_points[3] = elbow;
 
     // Matrices
-    float32_t rot_0_1_d[9] = {
-            sin(theta[0]), 0, cos(theta[0]),
-            cos(theta[0]), 0, -sin(theta[0]),
-            0, 1, 0
+    float rot_0_1_d[9] = {
+            cos(theta[0]), 0, sin(theta[0]),
+            0, 1, 0,
+            -sin(theta[0]), 0, cos(theta[0]),
     };
 
-    float32_t rot_1_2_d[9] = {
-            sin(theta[1]), cos(theta[1]), 0,
+    float rot_1_2_d[9] = {
             cos(theta[1]), -sin(theta[1]), 0,
+            sin(theta[1]), cos(theta[1]), 0,
             0, 0, 1
     };
 
-    float32_t rot_2_3_d[9] = {
-            sin(theta[2]), cos(theta[2]), 0,
+    float rot_2_3_d[9] = {
             cos(theta[2]), -sin(theta[2]), 0,
+            sin(theta[2]), cos(theta[2]), 0,
             0, 0, 1
     };
 
-    float32_t rot_0_2_d[9];
-    float32_t rot_0_3_d[9];
-    float32_t rot_3_6_d[9];
-    float32_t rot_inv_0_3_d[9] = {
+    float rot_0_2_d[9];
+    float rot_0_3_d[9];
+    float rot_3_6_d[9];
+    float rot_inv_0_3_d[9] = {
             1, 0, 0,
             0, 1, 0,
             0, 0, 1
     };
 
-    arm_matrix_instance_f32 rot_0_1, rot_1_2, rot_2_3, rot_0_3, rot_3_6, inv_rot_0_3, rot_0_2;
+    matrix_f32 rot_0_1, rot_1_2, rot_2_3, rot_0_3, rot_3_6, inv_rot_0_3, rot_0_2;
 
-    arm_mat_init_f32(&rot_0_1, 3, 3, rot_0_1_d);
-    arm_mat_init_f32(&rot_1_2, 3, 3, rot_1_2_d);
-    arm_mat_init_f32(&rot_2_3, 3, 3, rot_2_3_d);
-    arm_mat_init_f32(&rot_0_3, 3, 3, rot_0_3_d);
-    arm_mat_init_f32(&rot_3_6, 3, 3, rot_3_6_d);
-    arm_mat_init_f32(&inv_rot_0_3, 3, 3, rot_inv_0_3_d);
-    arm_mat_init_f32(&rot_0_2, 3, 3, rot_0_2_d);
+    matrix_init_f32(&rot_0_1, 3, 3, rot_0_1_d);
+    matrix_init_f32(&rot_1_2, 3, 3, rot_1_2_d);
+    matrix_init_f32(&rot_2_3, 3, 3, rot_2_3_d);
+    matrix_init_f32(&rot_0_3, 3, 3, rot_0_3_d);
+    matrix_init_f32(&rot_3_6, 3, 3, rot_3_6_d);
+    matrix_init_f32(&inv_rot_0_3, 3, 3, rot_inv_0_3_d);
+    matrix_init_f32(&rot_0_2, 3, 3, rot_0_2_d);
 
-    arm_mat_mult_f32(&rot_0_1, &rot_1_2, &rot_0_2);
-    arm_mat_mult_f32(&rot_0_2, &rot_2_3, &rot_0_3);
-
-
-    modified_arm_mat_inverse_f32(&rot_0_3, &inv_rot_0_3);
+    matrix_mult(&rot_0_1, &rot_1_2, &rot_0_2);
+    matrix_mult(&rot_0_2, &rot_2_3, &rot_0_3);
 
 
-    arm_mat_mult_f32(&inv_rot_0_3, rot_mat, &rot_3_6);
+    inverse_matrix(&rot_0_3, &inv_rot_0_3);
 
-    theta[4] = acos((rot_3_6.pData)[0]);
-    theta[3] = acos(rot_3_6.pData[3] / sin(theta[4]));
-    theta[5] = asin(rot_3_6.pData[1] / (-sin(theta[4])));
+
+    matrix_mult(&inv_rot_0_3, rot_mat, &rot_3_6);
+
+    theta[4] = acos((rot_3_6.p_data)[0]);
+    theta[3] = acos(rot_3_6.p_data[3] / sin(theta[4]));
+    theta[5] = asin(rot_3_6.p_data[1] / (-sin(theta[4])));
 
     for(int i = 0; i < 6; i++){
         angles[i] = theta[i];
     }
 }
 
-void Algorithm6Dof::forwardKinematics(float32_t *angles, coordinates *arm_position_points) {
+void Algorithm6Dof::forwardKinematics(float *angles, coordinates *arm_position_points) {
 
     float short_hyp, hyp, long_hyp;
     float alfa, beta;
@@ -148,7 +148,7 @@ void Algorithm6Dof::forwardKinematics(float32_t *angles, coordinates *arm_positi
     arm_position_points[4].y = long_hyp*sin(angles[0]);
     arm_position_points[4].z = sin(beta)*hyp+linkMap[BASE_HEIGHT] + linkMap[SHOULDER_HEIGHT];
 
-    float32_t rot_0_6_d_col[3] = {
+    float rot_0_6_d_col[3] = {
             sin(angles[4])*(sin(angles[0])*sin(angles[3]) - cos(angles[3])*(cos(angles[0])*cos(angles[1])*sin(angles[2]) + cos(angles[0])*cos(angles[2])*sin(angles[1]))) - cos(angles[4])*(cos(angles[0])*sin(angles[1])*sin(angles[2]) - cos(angles[0])*cos(angles[1])*cos(angles[2])),
             cos(angles[4])*(cos(angles[1])*sin(angles[2]) + cos(angles[2])*sin(angles[1])) + cos(angles[3])*sin(angles[4])*(cos(angles[1])*cos(angles[2]) - sin(angles[1])*sin(angles[2])),
             sin(angles[4])*(cos(angles[0])*sin(angles[3]) + cos(angles[3])*(cos(angles[1])*sin(angles[0])*sin(angles[2]) + cos(angles[2])*sin(angles[0])*sin(angles[1]))) + cos(angles[4])*(sin(angles[0])*sin(angles[1])*sin(angles[2]) - cos(angles[1])*cos(angles[2])*sin(angles[0]))
