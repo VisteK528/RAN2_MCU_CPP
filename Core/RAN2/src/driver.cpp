@@ -16,7 +16,7 @@ drivers::Driver::Driver(uint8_t joint_number, GPIO_PIN step, GPIO_PIN direction,
 
 void drivers::Driver::moveDelay(float delay) {
     HAL_GPIO_WritePin(step.gpio_port, step.gpio_pin, GPIO_PIN_RESET);
-    HAL_Delay(delay*1000);
+    HAL_Delay(seconds2Milliseconds(delay));
     HAL_GPIO_WritePin(step.gpio_port, step.gpio_pin, GPIO_PIN_SET);
 }
 

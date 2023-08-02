@@ -1,11 +1,13 @@
 #include "../include/alt_main.hpp"
-
 #include "../include/robot.hpp"
 #include "../include/read_gcode.h"
 #include <string>
 #include <cstring>
 
+#include "../include/algorithm6dof.hpp"
+
 #define LINE_MAX_LENGTH	80
+
 
 static char line_buffer[LINE_MAX_LENGTH + 1];
 static uint32_t line_length;
@@ -55,8 +57,44 @@ int alt_main(){
     printf("Starting...\n");
 
     Robot my_robot = buildRobot();
+    /*
     my_robot.home();
-    my_robot.move2Default();
+    my_robot.move2Default();*/
+
+    LINK_MAP map = {
+            {BASE_HEIGHT, 3.f},
+            {SHOULDER_HEIGHT, 12.f},
+            {SHOULDER_LENGTH, 20.76355f},
+            {ELBOW_LENGTH, 16.50985f},
+            {EE_LENGTH, 5},
+    };
+
+    float32_t offsets[6] = {0, 0, 0, 0, 0, 0};
+    float32_t angles[6];
+
+    Algorithm6Dof algorithm(map, offsets);
+
+    float32_t rot_mat_d[9] = {
+            1, 0, 0,
+            0, 1, 0,
+            0, 0, 1
+    };
+
+    arm_matrix_instance_f32 rot_mat;
+    arm_mat_init_f32(&rot_mat, 3, 3, rot_mat_d);
+
+    algorithm.inverseKinematics(20, 20, 20, &rot_mat, angles);
+    for(int i = 0; i < 6; i++){
+        printf("Theta%d: %f\n", i, rad2Deg(angles[i]));
+    }
+
+    coordinates points[6];
+
+    algorithm.forwardKinematics(angles, points);
+
+    for(int i = 0; i < 6; i++){
+        printf("Point: %d\tX: %f\tY: %f\tZ:%f:\n", i, points[i].x, points[i].y, points[i].z);
+    }
 
     while (1)
     {

@@ -6,22 +6,15 @@
 
 typedef enum{UP, DOWN} ENDSTOP_TYPE;
 
-class Sensor{
-public:
-    virtual ~Sensor() = default;
-    virtual bool checkSensor()=0;
-};
-
-class Endstop: public Sensor{
+class Endstop{
 public:
     Endstop(GPIO_PIN , ENDSTOP_TYPE type);
     Endstop() = default;
     ~Endstop() = default;
-    bool checkSensor() override;
+    bool checkSensor();
 private:
     GPIO_TypeDef* signal_pin_port;
     uint16_t signal_pin;
     ENDSTOP_TYPE type;
-
 };
 #endif //ROBOTARMNUMBER2CPP_SENSORS_HPP

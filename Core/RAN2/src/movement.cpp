@@ -8,7 +8,7 @@ Movement::Movement(float motor_step, uint16_t driver_microstep, uint16_t motor_s
     this->motor_shaft_gear_teeth = motor_shaft_gear_teeth;
     this->joint_gear_teeth = joint_gear_teeth;
 
-    this->one_pulse_step = kit::deg2Rad(motor_step/(float)driver_microstep);
+    this->one_pulse_step = deg2Rad(motor_step/(float)driver_microstep);
     this->speed_gear_ratio = (float)motor_shaft_gear_teeth/(float)joint_gear_teeth;
     this->torque_gear_ratio = 1/speed_gear_ratio;
 }
@@ -37,7 +37,7 @@ float Movement::getGearSpeedRatio() const {
 }
 
 float Movement::getMinDelay(float max_speed) {
-    return kit::seconds2Microseconds(one_pulse_step/motorVelFromJointVel(max_speed));
+    return seconds2Microseconds(one_pulse_step/motorVelFromJointVel(max_speed));
 }
 
 float Movement::getStartDelay(float acceleration) const {
@@ -49,7 +49,7 @@ float Movement::getStartDelay(float acceleration) const {
 
 std::vector<float> Movement::calculateSteps(unsigned int steps, float max_speed, float acceleration) {
     float motor_max_speed = motorVelFromJointVel(max_speed);
-    float motor_max_speed_delay = kit::seconds2Microseconds(one_pulse_step/motor_max_speed);
+    float motor_max_speed_delay = seconds2Microseconds(one_pulse_step/motor_max_speed);
     std::vector<float> delays;
     float angle = one_pulse_step;
     const float constant = 0.13568198123907316536355537605674;
@@ -93,7 +93,7 @@ std::vector<float> Movement::calculateSteps(unsigned int steps, float max_speed,
     std::vector<float> seconds_delays;
     seconds_delays.reserve(delays.size());
     for(const float copy_delay: delays){
-        seconds_delays.push_back(kit::microseconds2Seconds(copy_delay));
+        seconds_delays.push_back(microseconds2Seconds(copy_delay));
     }
 
     return seconds_delays;
@@ -117,18 +117,17 @@ std::vector<float> Movement::accelerateToVelocity(float velocity, float accelera
         }
         delays.push_back(delay);
 
-        current_velocity = jointVelFromMotorVel(motorVel(kit::microseconds2Seconds(delay)));
+        current_velocity = jointVelFromMotorVel(motorVel(microseconds2Seconds(delay)));
         if(current_velocity >= velocity){
             break;
         }
-        //printf("Delay: %f\tCurrent vel: %f\tDesired vel: %f\n", delay/1000.f, current_velocity, velocity);
         i++;
     }
 
     std::vector<float> seconds_delays;
     seconds_delays.reserve(delays.size());
     for(const float copy_delay: delays){
-        seconds_delays.push_back(kit::microseconds2Seconds(copy_delay));
+        seconds_delays.push_back(microseconds2Seconds(copy_delay));
     }
 
     return seconds_delays;
