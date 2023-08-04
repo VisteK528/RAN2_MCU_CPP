@@ -82,10 +82,10 @@ Robot buildRobot(){
 
     std::unique_ptr<Joint> shoulder_joint = std::make_unique<Joint>(1, shoulder_driver, shoulder_endstop, 149,
                                                                     drivers::DIRECTION::CLOCKWISE);
-    shoulder_joint->setHomingVelocity(0.08);
-    shoulder_joint->setMaxAcceleration(0.05);
+    shoulder_joint->setHomingVelocity(0.16);
+    shoulder_joint->setMaxAcceleration(0.1);
     shoulder_joint->setMaxPosition(171);
-    shoulder_joint->setOffset(14);
+    shoulder_joint->setOffset(10);
 
     // Elbow
     GPIO_PIN elbow_step, elbow_dir, elbow_en, elbow_endstop_pin;
@@ -106,7 +106,8 @@ Robot buildRobot(){
                                                                  drivers::DIRECTION::ANTICLOCKWISE);
 
     elbow_joint->setMaxPosition(70);
-    elbow_joint->setBaseAngle(50.3);
+    //elbow_joint->setBaseAngle(50.3);
+    elbow_joint->setBaseAngle(48);
 
     // Roll
     GPIO_PIN roll_step, roll_dir, roll_en, roll_endstop_pin;
@@ -130,7 +131,7 @@ Robot buildRobot(){
     wrist_roll_joint->setHomingVelocity(0.5);
     wrist_roll_joint->setHomingSteps(100);
 
-    wrist_roll_joint->setMaxPosition(270);
+    wrist_roll_joint->setMaxPosition(350);
     wrist_roll_joint->setOffset(-22);
 
     // Pitch
@@ -151,12 +152,10 @@ Robot buildRobot(){
     std::unique_ptr<Joint> wrist_pitch_joint = std::make_unique<Joint>(4, wrist_pitch_driver,
                                                                        wrist_pitch_endstop, 40,
                                                                        drivers::DIRECTION::ANTICLOCKWISE);
-    wrist_pitch_joint->setHomingAcceleration(0.2);
-    wrist_pitch_joint->setHomingVelocity(0.4);
     wrist_pitch_joint->setHomingSteps(100);
 
-    wrist_pitch_joint->setMaxAcceleration(0.8);
-    wrist_pitch_joint->setMaxVelocity(1.2);
+    wrist_pitch_joint->setMaxAcceleration(4);
+    wrist_pitch_joint->setMaxVelocity(3);
     wrist_pitch_joint->setMaxPosition(250);
 
     std::vector<std::unique_ptr<Joint>> joints;

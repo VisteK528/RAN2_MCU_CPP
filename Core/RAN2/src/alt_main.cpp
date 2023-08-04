@@ -1,11 +1,13 @@
 #include "../include/alt_main.hpp"
-
 #include "../include/robot.hpp"
 #include "../include/read_gcode.h"
 #include <string>
 #include <cstring>
 
+#include "../include/algorithm6dof.hpp"
+
 #define LINE_MAX_LENGTH	80
+
 
 static char line_buffer[LINE_MAX_LENGTH + 1];
 static uint32_t line_length;
@@ -56,7 +58,29 @@ int alt_main(){
 
     Robot my_robot = buildRobot();
     my_robot.home();
-    my_robot.move2Default();
+    //my_robot.move2Default();
+
+    LINK_MAP map = {
+            {BASE_HEIGHT, 3.f},
+            {SHOULDER_HEIGHT, 12.f},
+            {SHOULDER_LENGTH, 20.76355f},
+            {ELBOW_LENGTH, 16.50985f},
+            {EE_LENGTH, 5},
+    };
+
+    float offsets[6] = {0, 0, 0, 0, 0, 0};
+    float angles[6];
+
+    Algorithm6Dof algorithm(map, offsets);
+
+    float rot_mat_d[9] = {
+            0, 1, 0,
+            1, 0, 0,
+            0, 0, 1
+    };
+
+    matrix_f32 rot_mat;
+    matrix_init_f32(&rot_mat, 3, 3, rot_mat_d);
 
     while (1)
     {
@@ -81,13 +105,60 @@ int alt_main(){
                             else{
                                 my_robot.home();
                             }
+
+                        }
+                        else if((int)value == 1){
+                            float values[3];
+                            int i = 0;
+                            while(parseMessage(&letter, &value, line_buffer, &counter) == 1){
+                                values[i] = value;
+                                i++;
+                            }
+
+                            algorithm.inverseKinematics(values[0], values[1], values[2], &rot_mat, angles);
+                            for(int i = 0; i < 6; i++){
+                                printf("Theta%d: %f\n", i, rad2Deg(angles[i]));
+                            }
+
+                            coordinates points[6];
+
+                            algorithm.forwardKinematics(angles, points);
+
+                            for(int i = 0; i < 6; i++){
+                                printf("Point: %d\tX: %f\tY: %f\tZ:%f:\n", i, points[i].x, points[i].y, points[i].z);
+                            }
+                        }
+                        else if((int)value == 2){
+                            for(int i = 0; i < 1000; i++){
+                                algorithm.inverseKinematics(15, 10.f+(float)i/100.f, 20, &rot_mat, angles);
+
+                                angles[1] = 180.f - angles[1];
+                                angles[2] = angles[2] - 50.3;
+                                angles[3] = 180.f - angles[3];
+                                angles[4] = angles[4] - 45.f;
+
+                                for(int j = 0; j < 6; j++){
+                                    my_robot.moveJoint(j, angles[j]);
+                                }
+                            }
                         }
                     }
                     else if(letter == 'N'){
 
                     }
                     else if(letter == 'M'){
-
+                        if(int(value) == 18){
+                            if(result == 1){
+                                while(parseMessage(&letter, &value, line_buffer, &counter) == 1){
+                                    if(letter == 'J' && value >= 1 && value < 7){
+                                        my_robot.disableJoint((int)value - 1);
+                                    }
+                                }
+                            }
+                            else{
+                                my_robot.disableJoints();
+                            }
+                        }
                     }
                     else if(letter == 'J'){
                         uint8_t joint_number = (uint8_t)value;
