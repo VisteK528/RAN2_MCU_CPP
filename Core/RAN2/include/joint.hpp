@@ -25,6 +25,9 @@ public:
     void setOffset(float offset);
     void setBaseAngle(float base_angle);
 
+    void disableMotor();
+    void enableMotor();
+
     void move2Pos(float position, bool blocking);
     void homeJoint();
 private:

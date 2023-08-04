@@ -185,5 +185,13 @@ void Joint::homeJoint() {
     joint_position = 0;
 }
 
+void Joint::enableMotor() {
+    this->driver->enableMotor();
+}
+
+void Joint::disableMotor() {
+    this->driver->disableMotor();
+}
+
 
 

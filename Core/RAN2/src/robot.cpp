@@ -19,7 +19,7 @@ void Robot::home() {
     homed = true;
 }
 
-void Robot::homeJoint(int joint_number) {
+void Robot::homeJoint(uint8_t joint_number) {
     joints[joint_number]->homeJoint();
 }
 
@@ -27,8 +27,14 @@ void Robot::wait(uint32_t ms) {
     HAL_Delay(ms);
 }
 
-void Robot::moveJoint(int joint_number, float position) {
+void Robot::moveJoint(uint8_t joint_number, float position) {
     joints[joint_number]->move2Pos(position, true);
+}
+
+void Robot::moveJoints(float* angles) {
+    for(int i = 0; i < joints.size(); i++){
+        joints[i]->move2Pos(angles[i], false);
+    }
 }
 
 void Robot::move2Default() {
@@ -38,6 +44,26 @@ void Robot::move2Default() {
         joints[2]->move2Pos(35, false);
         //joints[3]->move2Pos(90, false);
         joints[4]->move2Pos(90, false);
+    }
+}
+
+void Robot::enableJoint(uint8_t joint_number) {
+    joints[joint_number]->enableMotor();
+}
+
+void Robot::enableJoints() {
+    for(int i = 0; i < joints.size(); i++){
+        this->joints[i]->enableMotor();
+    }
+}
+
+void Robot::disableJoint(uint8_t joint_number) {
+    joints[joint_number]->disableMotor();
+}
+
+void Robot::disableJoints() {
+    for(int i = 0; i < joints.size(); i++){
+        this->joints[i]->disableMotor();
     }
 }
 

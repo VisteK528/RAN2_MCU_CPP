@@ -129,12 +129,12 @@ bool drivers::Driver::getMovement(uint8_t joint_number) {
     return movement_data[joint_number].isMoving;
 }
 
-void drivers::Driver::enableStepper() {
-    HAL_GPIO_WritePin(enable.gpio_port, enable.gpio_pin, GPIO_PIN_SET);
+void drivers::Driver::enableMotor() {
+    HAL_GPIO_WritePin(enable.gpio_port, enable.gpio_pin, GPIO_PIN_RESET);
 }
 
-void drivers::Driver::disableStepper() {
-    HAL_GPIO_WritePin(enable.gpio_port, enable.gpio_pin, GPIO_PIN_RESET);
+void drivers::Driver::disableMotor() {
+    HAL_GPIO_WritePin(enable.gpio_port, enable.gpio_pin, GPIO_PIN_SET);
 }
 
 static void accelerateToVelocity(GPIO_PIN step_pin, uint8_t joint_number, TIM_HandleTypeDef *htim){

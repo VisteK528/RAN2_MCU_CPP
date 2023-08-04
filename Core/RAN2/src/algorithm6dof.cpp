@@ -57,8 +57,8 @@ void Algorithm6Dof::inverseKinematics(float x, float y, float z, matrix_f32* rot
 
     // Matrices
     float rot_0_1_d[9] = {
-            cos(theta[0]), -sin(theta[0]), 0,
-            sin(theta[0]), cos(theta[0]), 0,
+            cos(theta[0]), sin(theta[0]), 0,
+            -sin(theta[0]), cos(theta[0]), 0,
             0, 0, 1
     };
 
@@ -69,9 +69,9 @@ void Algorithm6Dof::inverseKinematics(float x, float y, float z, matrix_f32* rot
     };
 
     float rot_2_3_d[9] = {
-            cos(theta[2]), 0, sin(theta[2]),
+            cos(theta[2]), 0, -sin(theta[2]),
             0, 1, 0,
-            -sin(theta[2]), 0, cos(theta[2])
+            sin(theta[2]), 0, cos(theta[2])
     };
 
     float rot_0_2_d[9];
@@ -103,7 +103,7 @@ void Algorithm6Dof::inverseKinematics(float x, float y, float z, matrix_f32* rot
     matrix_mult(&inv_rot_0_3, rot_mat, &rot_3_6);
 
     theta[4] = acos((rot_3_6.p_data)[0]);
-    theta[3] = acos(rot_3_6.p_data[3] / sin(theta[4]));
+    theta[3] = asin(rot_3_6.p_data[3] / sin(theta[4]));
     theta[5] = asin(rot_3_6.p_data[1] / (sin(theta[4])));
 
     for(int i = 0; i < 6; i++){

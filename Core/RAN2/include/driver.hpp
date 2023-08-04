@@ -45,8 +45,8 @@ namespace drivers{
         void initializeMovement(uint8_t joint_number, int mode, float max_speed_delay, float d0, int iterations);
         bool getMovement(uint8_t joint_number);
         void stopMovement(uint8_t joint_number);
-        void disableStepper();
-        void enableStepper();
+        void disableMotor();
+        void enableMotor();
         int getCount(uint8_t joint_number) const;
 
     };
