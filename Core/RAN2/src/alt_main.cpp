@@ -58,6 +58,7 @@ int alt_main(){
 
     Robot my_robot = buildRobot();
     my_robot.home();
+
     //my_robot.move2Default();
 
     LINK_MAP map = {

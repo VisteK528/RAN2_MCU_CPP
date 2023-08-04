@@ -3,6 +3,7 @@
 
 #include "../../Inc/gpio.h"
 #include "../../Inc/tim.h"
+#include "utilities.hpp"
 
 #define ACCEL           (unsigned char) 0
 #define MOVE_STEPS      (unsigned char) 1
