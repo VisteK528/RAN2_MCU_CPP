@@ -50,7 +50,7 @@ else ()
 endif ()
 
 include_directories(Core/Inc Drivers/STM32F4xx_HAL_Driver/Inc Drivers/STM32F4xx_HAL_Driver/Inc/Legacy Drivers/CMSIS/Device/ST/STM32F4xx/Include Drivers/CMSIS/Include Middlewares/Third_Party/ARM_CMSIS/CMSIS/DSP/PrivateInclude/ Middlewares/Third_Party/ARM_CMSIS/CMSIS/DSP/Include/ Middlewares/ST/ARM/DSP/Inc Core/Inc Drivers/STM32F4xx_HAL_Driver/Inc Drivers/STM32F4xx_HAL_Driver/Inc/Legacy Drivers/CMSIS/Device/ST/STM32F4xx/Include Drivers/CMSIS/Include)
-#link_directories(Middlewares/ST/ARM/DSP/Lib)
+link_directories(Core/RAN2/lib)
 
 add_definitions(-DDEBUG -DUSE_HAL_DRIVER -DSTM32F401xE -DDEBUG -DUSE_HAL_DRIVER -DSTM32F401xE)
 
@@ -64,7 +64,7 @@ add_link_options(-T ${LINKER_SCRIPT})
 
 add_executable(${PROJECT_NAME}.elf ${SOURCES} ${LINKER_SCRIPT} )
 
-#target_link_libraries(${PROJECT_NAME}.elf arm_cortexM4lf_math)
+target_link_libraries(${PROJECT_NAME}.elf NumericalMath_CM4)
 
 set(HEX_FILE ${PROJECT_BINARY_DIR}/${PROJECT_NAME}.hex)
 set(BIN_FILE ${PROJECT_BINARY_DIR}/${PROJECT_NAME}.bin)
