@@ -37,7 +37,7 @@ static float strto_f(char* string, uint8_t* length){
 
 static uint8_t read_float(const char* line, float* value, uint16_t* char_counter){
     char* number_start = const_cast<char *>(line + *char_counter);
-    uint8_t length;
+    uint8_t length = 0;
 
     (*value) = strto_f(number_start, &length);
 

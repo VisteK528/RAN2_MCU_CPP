@@ -10,7 +10,9 @@
 
 class Joint{
 public:
-    Joint(std::unique_ptr<Driver>& driver, std::shared_ptr<Endstop> sensor, uint16_t gear_teeth, DIRECTION homing_direction);
+    Joint(uint8_t number, std::unique_ptr<Driver>& driver, std::shared_ptr<Endstop> sensor, uint16_t gear_teeth, DIRECTION homing_direction);
+
+    uint8_t getJointNumber() const;
     void setHomingSteps(uint16_t homing_steps);
     void setHomingVelocity(float homing_velocity);
     void setHomingAcceleration(float homing_acceleration);
@@ -21,11 +23,16 @@ public:
     void setOffset(float offset);
     void setBaseAngle(float base_angle);
 
-    void move2Pos(float position);
+    void disableMotor();
+    void enableMotor();
+
+    void move2Pos(float position, bool blocking);
     void homeJoint();
 private:
     unsigned int degrees2Steps(float degrees);
-    void moveBySteps(unsigned int steps, DIRECTION direction, float max_velocity, float max_acceleration);
+    void accelerateJoint(DIRECTION direction, float velocity, float acceleration);
+    void moveJoint(DIRECTION direction, float velocity);
+    void moveJointBySteps(unsigned int steps, DIRECTION direction, float max_velocity, float max_acceleration, bool blocking);
     std::unique_ptr<Driver> driver;
     std::shared_ptr<Endstop> endstop;
 
@@ -35,6 +42,8 @@ private:
     float joint_position = 0;
     float offset = 0;
     float base_angle = 0;
+
+    uint8_t joint_number;
 
     // Homing Variables
     DIRECTION homing_direction;

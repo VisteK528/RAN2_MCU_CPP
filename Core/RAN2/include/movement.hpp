@@ -17,6 +17,10 @@ public:
     float getGearSpeedRatio() const;
     std::vector<float> calculateSteps(unsigned int steps, float max_speed, float acceleration);
     std::vector<float> accelerateToVelocity(float velocity, float acceleration = 0.5);
+
+    float getMinDelay(float max_speed);
+    float getStartDelay(float acceleration) const;
+
 private:
     float motor_step;
     uint16_t driver_microstep;
