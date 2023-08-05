@@ -3,14 +3,17 @@
 
 Robot::Robot(std::vector<std::unique_ptr<Joint>>& joints) {
 
+    // Initialize joints
     this->joints.reserve(joints.size());
-
-    for(int i = 0; i < joints.size(); i++){
+    for (int i = 0; i < joints.size(); i++) {
         this->joints[i] = std::move(joints[i]);
     }
+
+    // Initialize Kinematics Algorithm
+    this->k_algorithms = std::make_unique<Algorithm6Dof>(map, joint_offsets);
 }
 
-void Robot::home() {
+void Robot::home(){
 
     for(int i = 0; i < joints.size(); i++){
         printf("Homing joint: %d\n", i);
@@ -193,4 +196,9 @@ Robot buildRobot(){
 
     Robot robot(joints);
     return robot;
+}
+
+
+void executeGCODE(Robot& robot, const char* command_str){
+
 }
