@@ -6,6 +6,39 @@ Algorithm6Dof::Algorithm6Dof(LINK_MAP link_map, float *offsets) {
     this->offsets = offsets;
 }
 
+void Algorithm6Dof::createRotationMatrix(float yaw, float pitch, float roll, matrix_f32* rot_mat) {
+    float yaw_matrix_d[9] = {
+             cos(yaw), -sin(yaw), 0,
+             sin(yaw),  cos(yaw), 0,
+                    0,         0, 1,
+    };
+
+    float pitch_matrix_d[9] = {
+             cos(pitch), 0, sin(pitch),
+                      0, 1,          0,
+            -sin(pitch), 0, cos(pitch),
+    };
+
+    float roll_matrix_d[9] = {
+            1,         0,          0,
+            0, cos(roll), -sin(roll),
+            0, sin(roll),  cos(roll),
+    };
+
+    float buffer_matrix_d[9] = {};
+
+    matrix_f32 yaw_matrix, pitch_matrix, roll_matrix, buffer_matrix;
+
+    matrix_init_f32(&yaw_matrix, 3, 3, yaw_matrix_d);
+    matrix_init_f32(&pitch_matrix, 3, 3, pitch_matrix_d);
+    matrix_init_f32(&roll_matrix, 3, 3, roll_matrix_d);
+
+    matrix_init_f32(&buffer_matrix, 3, 3, buffer_matrix_d);
+
+    matrix_mult(&yaw_matrix, &pitch_matrix, &buffer_matrix);
+    matrix_mult(&buffer_matrix, &roll_matrix, rot_mat);
+}
+
 
 void Algorithm6Dof::inverseKinematics(float x, float y, float z, matrix_f32* rot_mat,
                                       float* angles) {

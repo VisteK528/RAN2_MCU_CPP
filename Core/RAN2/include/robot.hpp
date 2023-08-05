@@ -6,6 +6,18 @@
 #include <unordered_map>
 #include "../../Inc/gpio.h"
 #include "algorithm6dof.hpp"
+#include "read_gcode.h"
+#include "utilities.hpp"
+
+typedef enum {
+    millimeters,
+    inches
+} LENGTH_UNITS;
+
+typedef enum{
+    degrees,
+    radians
+} ANGLE_UNITS;
 
 class Robot{
 public:
@@ -14,15 +26,21 @@ public:
 
     void home();
     void move2Default();
-    void moveJoint(uint8_t joint_number, float position);
+    void moveJoint(uint8_t joint_number, float position, bool blocking=true);
     void moveJoints(float* angles);
-
+    void move2Coordinates(float x, float y, float z, float yaw, float pitch, float roll);
     void homeJoint(uint8_t joint_number);
     void wait(uint32_t seconds);
     void disableJoint(uint8_t joint_number);
     void disableJoints();
     void enableJoint(uint8_t joint_number);
     void enableJoints();
+
+    // Units set / get functions
+    void setLengthUnits(LENGTH_UNITS units);
+    LENGTH_UNITS getLengthUnits();
+    void setAngleUnits(ANGLE_UNITS units);
+    ANGLE_UNITS getAngleUnits();
 
 private:
     // Kinematics algorithms related variables
@@ -48,6 +66,9 @@ private:
                                        {0, 0, 0},
                                        {0, 0, 0},
                                        {0, 0, 0}};
+
+    LENGTH_UNITS lengthUnits = millimeters;
+    ANGLE_UNITS angleUnits = degrees;
 
     // Movement & Joint variables
     std::unordered_map<int, std::unique_ptr<Joint>> joints;

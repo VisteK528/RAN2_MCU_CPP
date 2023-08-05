@@ -30,23 +30,53 @@ void Robot::wait(uint32_t ms) {
     HAL_Delay(ms);
 }
 
-void Robot::moveJoint(uint8_t joint_number, float position) {
-    joints[joint_number]->move2Pos(position, true);
+void Robot::moveJoint(uint8_t joint_number, float position, bool blocking) {
+    if(angleUnits == radians){
+        position = rad2Deg(position);
+    }
+
+    if(homed){
+        joints[joint_number]->move2Pos(position, blocking);
+    }
 }
 
 void Robot::moveJoints(float* angles) {
     for(int i = 0; i < joints.size(); i++){
-        joints[i]->move2Pos(angles[i], false);
+        moveJoint(i, angles[i], false);
     }
+}
+
+void Robot::move2Coordinates(float x, float y, float z, float yaw, float pitch, float roll) {
+    if(lengthUnits == inches){
+        x = inches2Millimeters(x);
+        y = inches2Millimeters(x);
+        z = inches2Millimeters(z);
+    }
+
+    if(angleUnits == degrees){
+        yaw = deg2Rad(yaw);
+        pitch = deg2Rad(pitch);
+        roll = deg2Rad(roll);
+    }
+
+    float rot_mat_d[9] = {};
+
+    matrix_f32 rotation_matrix;
+    matrix_init_f32(&rotation_matrix, 3, 3, rot_mat_d);
+
+    k_algorithms->createRotationMatrix(yaw, pitch, roll, &rotation_matrix);
+    k_algorithms->inverseKinematics(x/100.f, y/100.f, z/100.f, &rotation_matrix, joint_angles);
+
+    //TODO Add offsets handling before passing angles to the execution
+    moveJoints(joint_angles);
 }
 
 void Robot::move2Default() {
     if(homed){
-        joints[0]->move2Pos(270, false);
-        joints[1]->move2Pos(60, false);
-        joints[2]->move2Pos(35, false);
-        //joints[3]->move2Pos(90, false);
-        joints[4]->move2Pos(90, false);
+        moveJoint(0, 270, false);
+        moveJoint(1, 60, false);
+        moveJoint(2, 35, false);
+        moveJoint(4, 112, false);
     }
 }
 
@@ -68,6 +98,22 @@ void Robot::disableJoints() {
     for(int i = 0; i < joints.size(); i++){
         this->joints[i]->disableMotor();
     }
+}
+
+void Robot::setLengthUnits(LENGTH_UNITS units) {
+    this->lengthUnits = units;
+}
+
+LENGTH_UNITS Robot::getLengthUnits() {
+    return lengthUnits;
+}
+
+void Robot::setAngleUnits(ANGLE_UNITS units) {
+    this->angleUnits = units;
+}
+
+ANGLE_UNITS Robot::getAngleUnits() {
+    return angleUnits;
 }
 
 Robot buildRobot(){
@@ -198,7 +244,157 @@ Robot buildRobot(){
     return robot;
 }
 
+static void executeGGCODE(Robot& robot, uint16_t code, uint8_t parse_result, uint16_t counter, const char* command_str){
+    float value;
+    char letter;
 
-void executeGCODE(Robot& robot, const char* command_str){
+    switch (code) {
+        case 00:
+        {
+            float coordinates[3];
+            bool checkTable[3] = {false, false, false};
+
+            float yaw = 0;
+            float pitch = 0;
+            float roll = 0;
+
+            while((parse_result = parseMessage(&letter, &value, command_str, &counter)) == 1){
+                switch (letter) {
+                    case 'X':
+                        coordinates[0] = value;
+                        checkTable[0] = true;
+                        break;
+                    case 'Y':
+                        coordinates[1] = value;
+                        checkTable[1] = true;
+                        break;
+                    case 'Z':
+                        coordinates[2] = value;
+                        checkTable[2] = true;
+                        break;
+                    case 'W':
+                        yaw = value;
+                        break;
+                    case 'P':
+                        pitch = value;
+                        break;
+                    case 'R':
+                        roll = value;
+                        break;
+                    default:
+                        break;
+                }
+            }
+
+            // Check if all coordinates has been assigned
+            if(checkTable[0] && checkTable[1] && checkTable[2]){
+                robot.move2Coordinates(coordinates[0], coordinates[1], coordinates[2], yaw, pitch, roll);
+            }
+            break;
+        }
+        case 27:
+        {
+            robot.move2Default();
+            break;
+        }
+        case 28:
+        {
+            if(parse_result == 0){
+                robot.home();
+            }
+            else{
+                while((parse_result = parseMessage(&letter, &value, command_str, &counter)) == 1){
+                    if(letter == 'J' && value >= 1 && value < 7){
+                        robot.homeJoint((int)value - 1);
+                    }
+                }
+            }
+            break;
+        }
+        case 20:
+            robot.setLengthUnits(inches);
+            break;
+        case 21:
+            robot.setLengthUnits(millimeters);
+            break;
+        case 29:
+            robot.setAngleUnits(degrees);
+            break;
+        case 30:
+            robot.setAngleUnits(radians);
+            break;
+        default:
+            break;
+
+    }
+}
+
+static void executeMGCODE(Robot& robot, uint16_t code, uint8_t parse_result, uint16_t counter, const char* command_str){
+    float value;
+    char letter;
+
+    switch (code) {
+        case 17:
+        {
+            if(parse_result == 1){
+                while(parseMessage(&letter, &value, command_str, &counter) == 1){
+                    if(letter == 'J' && value >= 1 && value < 7){
+                        robot.enableJoint((int)value - 1);
+                    }
+                }
+            }
+            else{
+                robot.enableJoints();
+            }
+            break;
+        }
+        case 18:
+        {
+            if(parse_result == 1){
+                while(parseMessage(&letter, &value, command_str, &counter) == 1){
+                    if(letter == 'J' && value >= 1 && value < 7){
+                        robot.disableJoint((int)value - 1);
+                    }
+                }
+            }
+            else{
+                robot.disableJoints();
+            }
+            break;
+        }
+        default:
+            break;
+    }
+}
+
+
+void executeGCODE(Robot& robot, const char* command_str) {
+    uint8_t parse_result;
+    uint16_t counter;
+    char g_letter;
+    float value;
+
+    if ((parse_result = parseMessage(&g_letter, &value, command_str, &counter)) == 1) {
+        switch (g_letter) {
+            case 'G':
+                executeGGCODE(robot, (int)value, parse_result, counter, command_str);
+                break;
+            case 'M':
+                executeMGCODE(robot, (int)value, parse_result, counter, command_str);
+                break;
+            case 'J':
+            {
+                auto joint_number = (uint8_t)value;
+                parseMessage(&g_letter, &value, command_str, &counter);
+                if(g_letter == 'P'){
+                    robot.moveJoint(joint_number-1, value);
+                }
+                break;
+            }
+            default:
+                break;
+
+        }
+    }
 
 }
