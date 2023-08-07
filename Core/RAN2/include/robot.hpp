@@ -81,6 +81,6 @@ private:
 };
 
 Robot buildRobot();
-void executeGCODE(Robot& robot, const char* command_str);
+execution_status executeGCODE(Robot& robot, const char* command_str);
 
 #endif //ROBOTARMNUMBER2CPP_ROBOT_HPP

@@ -1,10 +1,6 @@
 #include "../include/alt_main.hpp"
 #include "../include/robot.hpp"
-#include "../include/read_gcode.h"
-#include <string>
 #include <cstring>
-
-#include "../include/algorithm6dof.hpp"
 
 #define LINE_MAX_LENGTH	80
 
@@ -32,7 +28,6 @@ uint8_t line_append(uint8_t value)
             line_buffer[line_length] = '\0';
             // przetwarzamy dane
             // zaczynamy zbieranie danych od nowa
-            printf("Command executed successfully: %d\n", line_length);
             line_length = 0;
             return 0;
         }
@@ -58,15 +53,24 @@ int alt_main(){
     printf("Starting...\n");
 
     Robot my_robot = buildRobot();
+    execution_status status;
+
+    printf("Status ready!\n");
+    printf("Command: \n");
 
     while (1)
     {
         uint8_t uart_value;
         if (HAL_UART_Receive(&huart2, &uart_value, 1, 0) == HAL_OK){
             if(line_append(uart_value) == 0){
-                executeGCODE(my_robot, line_buffer);
+                status = executeGCODE(my_robot, line_buffer);
                 memset(line_buffer, 0, 80);
-                printf("Command executed successfully\n");
+                if(status == success){
+                    printf("Command executed successfully\n");
+                }
+                else{
+                    printf("Command execution failed\n");
+                }
             }
             else if(uart_value != '\0' && line_length >= 0){
                 printf("Command: %s\n", line_buffer);

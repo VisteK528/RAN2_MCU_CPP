@@ -52,7 +52,7 @@ endif ()
 include_directories(Core/Inc Drivers/STM32F4xx_HAL_Driver/Inc Drivers/STM32F4xx_HAL_Driver/Inc/Legacy Drivers/CMSIS/Device/ST/STM32F4xx/Include Drivers/CMSIS/Include  Core/Inc Drivers/STM32F4xx_HAL_Driver/Inc Drivers/STM32F4xx_HAL_Driver/Inc/Legacy Drivers/CMSIS/Device/ST/STM32F4xx/Include Drivers/CMSIS/Include)
 link_directories(Core/RAN2/lib)
 
-add_definitions(-DDEBUG -DUSE_HAL_DRIVER -DSTM32F401xE -DDEBUG -DUSE_HAL_DRIVER -DSTM32F401xE)
+add_definitions(-DDEBUG -DUSE_HAL_DRIVER -DSTM32F401xE)
 
 file(GLOB_RECURSE SOURCES "Core/*.*" "CMSIS/*.*" "Drivers/*.*")
 

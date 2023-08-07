@@ -288,9 +288,10 @@ Robot buildRobot(){
     return robot;
 }
 
-static void executeGGCODE(Robot& robot, uint16_t code, uint8_t parse_result, uint16_t counter, const char* command_str){
+static execution_status executeGGCODE(Robot& robot, uint16_t code, uint8_t parse_result, uint16_t counter, const char* command_str){
     float value;
     char letter;
+    execution_status status;
 
     switch (code) {
         case 00:
@@ -334,7 +335,7 @@ static void executeGGCODE(Robot& robot, uint16_t code, uint8_t parse_result, uin
 
             // Check if all coordinates has been assigned
             if(checkTable[0] && checkTable[1] && checkTable[2]){
-                robot.move2Coordinates(coordinates[0], coordinates[1], coordinates[2], yaw, pitch, roll);
+                return robot.move2Coordinates(coordinates[0], coordinates[1], coordinates[2], yaw, pitch, roll);
             }
             break;
         }
@@ -358,52 +359,52 @@ static void executeGGCODE(Robot& robot, uint16_t code, uint8_t parse_result, uin
                     }
                 }
 
-                robot.wait(time);
+                return robot.wait(time);
             }
 
         }
         case 27:
         {
-            robot.move2Default();
-            break;
+            return robot.move2Default();
         }
         case 28:
         {
             if(parse_result == 0){
-                robot.home();
+                return robot.home();
             }
             else{
                 while(parse_result == 1){
                     parse_result = parseMessage(&letter, &value, command_str, &counter);
 
                     if(letter == 'J' && value >= 1 && value < 7){
-                        robot.homeJoint((int)value - 1);
+                        status = robot.homeJoint((int)value - 1);
+                        if(status == failure){
+                            return status;
+                        }
                     }
                 }
+                return status;
             }
-            break;
         }
         case 20:
-            robot.setLengthUnits(inches);
-            break;
+            return robot.setLengthUnits(inches);
         case 21:
-            robot.setLengthUnits(millimeters);
-            break;
+            return robot.setLengthUnits(millimeters);
         case 29:
-            robot.setAngleUnits(degrees);
-            break;
+            return robot.setAngleUnits(degrees);
         case 30:
-            robot.setAngleUnits(radians);
-            break;
+            return robot.setAngleUnits(radians);
         default:
             break;
 
     }
+    return failure;
 }
 
-static void executeMGCODE(Robot& robot, uint16_t code, uint8_t parse_result, uint16_t counter, const char* command_str){
+static execution_status executeMGCODE(Robot& robot, uint16_t code, uint8_t parse_result, uint16_t counter, const char* command_str){
     float value;
     char letter;
+    execution_status status;
 
     switch (code) {
         case 0:
@@ -415,14 +416,17 @@ static void executeMGCODE(Robot& robot, uint16_t code, uint8_t parse_result, uin
                     parse_result = parseMessage(&letter, &value, command_str, &counter);
 
                     if(letter == 'J' && value >= 1 && value < 7){
-                        robot.enableJoint((int)value - 1);
+                        status = robot.enableJoint((int)value - 1);
+                        if(status == failure){
+                            return status;
+                        }
                     }
                 }
+                return status;
             }
             else{
-                robot.enableJoints();
+                return robot.enableJoints();
             }
-            break;
         }
         case 18:
         {
@@ -431,22 +435,26 @@ static void executeMGCODE(Robot& robot, uint16_t code, uint8_t parse_result, uin
                     parse_result = parseMessage(&letter, &value, command_str, &counter);
 
                     if(letter == 'J' && value >= 1 && value < 7){
-                        robot.disableJoint((int)value - 1);
+                        status = robot.disableJoint((int)value - 1);
+                        if(status == failure){
+                            return status;
+                        }
                     }
                 }
+                return status;
             }
             else{
-                robot.disableJoints();
+                return robot.disableJoints();
             }
-            break;
         }
         default:
             break;
     }
+    return failure;
 }
 
 
-void executeGCODE(Robot& robot, const char* command_str) {
+execution_status executeGCODE(Robot& robot, const char* command_str) {
     uint8_t parse_result;
     uint16_t counter;
     char g_letter;
@@ -456,17 +464,17 @@ void executeGCODE(Robot& robot, const char* command_str) {
 
     switch (g_letter) {
         case 'G':
-            executeGGCODE(robot, (int)value, parse_result, counter, command_str);
+            return executeGGCODE(robot, (int)value, parse_result, counter, command_str);
             break;
         case 'M':
-            executeMGCODE(robot, (int)value, parse_result, counter, command_str);
+            return executeMGCODE(robot, (int)value, parse_result, counter, command_str);
             break;
         case 'J':
         {
             auto joint_number = (uint8_t)value;
             parseMessage(&g_letter, &value, command_str, &counter);
             if(g_letter == 'P'){
-                robot.moveJoint(joint_number-1, value);
+                return robot.moveJoint(joint_number-1, value);
             }
             break;
         }
@@ -474,5 +482,5 @@ void executeGCODE(Robot& robot, const char* command_str) {
             break;
 
     }
-
+    return failure;
 }
