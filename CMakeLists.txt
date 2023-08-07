@@ -49,12 +49,12 @@ else ()
     add_compile_options(-Og -g)
 endif ()
 
-include_directories(Core/Inc Drivers/STM32F4xx_HAL_Driver/Inc Drivers/STM32F4xx_HAL_Driver/Inc/Legacy Drivers/CMSIS/Device/ST/STM32F4xx/Include Drivers/CMSIS/Include Middlewares/Third_Party/ARM_CMSIS/CMSIS/DSP/PrivateInclude/ Middlewares/Third_Party/ARM_CMSIS/CMSIS/DSP/Include/ Middlewares/ST/ARM/DSP/Inc Core/Inc Drivers/STM32F4xx_HAL_Driver/Inc Drivers/STM32F4xx_HAL_Driver/Inc/Legacy Drivers/CMSIS/Device/ST/STM32F4xx/Include Drivers/CMSIS/Include)
+include_directories(Core/Inc Drivers/STM32F4xx_HAL_Driver/Inc Drivers/STM32F4xx_HAL_Driver/Inc/Legacy Drivers/CMSIS/Device/ST/STM32F4xx/Include Drivers/CMSIS/Include  Core/Inc Drivers/STM32F4xx_HAL_Driver/Inc Drivers/STM32F4xx_HAL_Driver/Inc/Legacy Drivers/CMSIS/Device/ST/STM32F4xx/Include Drivers/CMSIS/Include)
 link_directories(Core/RAN2/lib)
 
 add_definitions(-DDEBUG -DUSE_HAL_DRIVER -DSTM32F401xE -DDEBUG -DUSE_HAL_DRIVER -DSTM32F401xE)
 
-file(GLOB_RECURSE SOURCES "Library/*.*" "Core/*.*" "CMSIS/*.*" "Middlewares/*.*" "Drivers/*.*" "Core/*.*" "Drivers/*.*")
+file(GLOB_RECURSE SOURCES "Core/*.*" "CMSIS/*.*" "Drivers/*.*")
 
 set(LINKER_SCRIPT ${CMAKE_SOURCE_DIR}/STM32F401RETX_FLASH.ld)
 

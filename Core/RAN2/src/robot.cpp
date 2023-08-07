@@ -7,7 +7,6 @@ static void convertAllToDeg(float* angles_rad, uint8_t number){
 }
 
 Robot::Robot(std::vector<std::unique_ptr<Joint>>& joints) {
-
     // Initialize joints
     this->joints.reserve(joints.size());
     for (int i = 0; i < joints.size(); i++) {
@@ -18,42 +17,51 @@ Robot::Robot(std::vector<std::unique_ptr<Joint>>& joints) {
     this->k_algorithms = std::make_unique<Algorithm6Dof>(map, joint_offsets);
 }
 
-void Robot::home(){
-
-    for(int i = 0; i < joints.size(); i++){
-        printf("Homing joint: %d\n", i);
-        homeJoint(i);
+execution_status Robot::home(){
+    for(uint16_t i = 0; i < joints.size(); i++){
+        if(homeJoint(i) != success){
+            return failure;
+        }
     }
     homed = true;
+    return success;
 }
 
-void Robot::homeJoint(uint8_t joint_number) {
+execution_status Robot::homeJoint(uint8_t joint_number) {
     if(joints[joint_number]->isEnabled()){
         joints[joint_number]->homeJoint();
+        return success;
     }
+    return failure;
 }
 
-void Robot::wait(uint32_t ms) {
+execution_status Robot::wait(uint32_t ms) {
     HAL_Delay(ms);
+    return success;
 }
 
-void Robot::moveJoint(uint8_t joint_number, float position, bool blocking) {
+execution_status Robot::moveJoint(uint8_t joint_number, float position, bool blocking) {
     if(angleUnits == radians){
         position = rad2Deg(position);
     }
 
     if(homed){
         joints[joint_number]->move2Pos(position, blocking);
+        return success;
     }
+    return failure;
 }
 
-void Robot::moveJoints(float* angles) {
+execution_status Robot::moveJoints(float* angles) {
     for(int i = 0; i < 6; i++){
-        moveJoint(i, angles[i], false);
+        if(moveJoint(i, angles[i], false) != success){
+            return failure;
+        }
     }
+    return success;
 }
 
-void Robot::move2Coordinates(float x, float y, float z, float yaw, float pitch, float roll) {
+execution_status Robot::move2Coordinates(float x, float y, float z, float yaw, float pitch, float roll) {
     if(lengthUnits == inches){
         x = inches2Millimeters(x);
         y = inches2Millimeters(x);
@@ -94,49 +102,54 @@ void Robot::move2Coordinates(float x, float y, float z, float yaw, float pitch, 
         printf("Theta%d: %f\n", i, joint_angles[i]);
     }
 
-    moveJoints(joint_angles);
+    return moveJoints(joint_angles);
 }
 
-void Robot::move2Default() {
-    if(homed){
-        moveJoint(0, 270, false);
-        moveJoint(1, 60, false);
-        moveJoint(2, 35, false);
-        moveJoint(3, 0.1, false);
-        moveJoint(4, 112, false);
-    }
+execution_status Robot::move2Default() {
+    float angles[6] = {270.f, 60.f, 35.f, 0.1f, 112.f, 0.1f};
+    return moveJoints(angles);
 }
 
-void Robot::enableJoint(uint8_t joint_number) {
+execution_status Robot::enableJoint(uint8_t joint_number) {
     joints[joint_number]->enableMotor();
+    return success;
 }
 
-void Robot::enableJoints() {
+execution_status Robot::enableJoints() {
     for(int i = 0; i < joints.size(); i++){
-        this->joints[i]->enableMotor();
+        if(enableJoint(i) != success){
+            return failure;
+        }
     }
+    return success;
 }
 
-void Robot::disableJoint(uint8_t joint_number) {
+execution_status Robot::disableJoint(uint8_t joint_number) {
     joints[joint_number]->disableMotor();
+    return success;
 }
 
-void Robot::disableJoints() {
+execution_status Robot::disableJoints() {
     for(int i = 0; i < joints.size(); i++){
-        this->joints[i]->disableMotor();
+        if(disableJoint(i) != success){
+            return failure;
+        }
     }
+    return success;
 }
 
-void Robot::setLengthUnits(LENGTH_UNITS units) {
+execution_status Robot::setLengthUnits(LENGTH_UNITS units) {
     this->lengthUnits = units;
+    return success;
 }
 
 LENGTH_UNITS Robot::getLengthUnits() {
     return lengthUnits;
 }
 
-void Robot::setAngleUnits(ANGLE_UNITS units) {
+execution_status Robot::setAngleUnits(ANGLE_UNITS units) {
     this->angleUnits = units;
+    return success;
 }
 
 ANGLE_UNITS Robot::getAngleUnits() {
@@ -156,7 +169,7 @@ Robot buildRobot(){
     waist_endstop_pin.gpio_port = J1_ENDSTOP_GPIO_Port;
     waist_endstop_pin.gpio_pin = J1_ENDSTOP_Pin;
 
-    std::unique_ptr<Driver> waist_driver = std::make_unique<drivers::TMC2209>(0, waist_step, waist_dir, waist_en, 20, 0.9f, 8);
+    std::unique_ptr<Driver> waist_driver = std::make_unique<drivers::Driver>(0, waist_step, waist_dir, waist_en, 20, 0.9f, 8);
     std::shared_ptr<Endstop> waist_endstop = std::make_shared<Endstop>(waist_endstop_pin, ENDSTOP_TYPE::UP);
 
     std::unique_ptr<Joint> waist_joint = std::make_unique<Joint>(0, waist_driver, waist_endstop, 125,
@@ -179,7 +192,7 @@ Robot buildRobot(){
     shoulder_endstop_pin.gpio_port = J2_ENDSTOP_GPIO_Port;
     shoulder_endstop_pin.gpio_pin = J2_ENDSTOP_Pin;
 
-    std::unique_ptr<Driver> shoulder_driver = std::make_unique<DM556>(1, shoulder_step, shoulder_dir, shoulder_en, 8, 1.8f, 20);
+    std::unique_ptr<Driver> shoulder_driver = std::make_unique<Driver>(1, shoulder_step, shoulder_dir, shoulder_en, 20, 1.8f, 8);
     std::shared_ptr<Endstop> shoulder_endstop = std::make_shared<Endstop>(shoulder_endstop_pin, ENDSTOP_TYPE::UP);
 
     std::unique_ptr<Joint> shoulder_joint = std::make_unique<Joint>(1, shoulder_driver, shoulder_endstop, 149,
@@ -204,7 +217,7 @@ Robot buildRobot(){
     elbow_endstop_pin.gpio_port = J3_ENDSTOP_GPIO_Port;
     elbow_endstop_pin.gpio_pin = J3_ENDSTOP_Pin;
     
-    std::unique_ptr<Driver> elbow_driver = std::make_unique<drivers::TMC2209>(2, elbow_step, elbow_dir, elbow_en, 20, 0.9, 8);
+    std::unique_ptr<Driver> elbow_driver = std::make_unique<drivers::Driver>(2, elbow_step, elbow_dir, elbow_en, 20, 0.9, 8);
     std::shared_ptr<Endstop> elbow_endstop = std::make_shared<Endstop>(elbow_endstop_pin, ENDSTOP_TYPE::UP);
 
     std::unique_ptr<Joint> elbow_joint = std::make_unique<Joint>(2, elbow_driver, elbow_endstop, 62,
@@ -227,7 +240,7 @@ Robot buildRobot(){
     roll_endstop_pin.gpio_port = J4_ENDSTOP_GPIO_Port;
     roll_endstop_pin.gpio_pin = J4_ENDSTOP_Pin;
     
-    std::unique_ptr<Driver> wrist_roll_driver = std::make_unique<drivers::TMC2209>(3, roll_step, roll_dir, roll_en, 1, 1.8f, 8);
+    std::unique_ptr<Driver> wrist_roll_driver = std::make_unique<drivers::Driver>(3, roll_step, roll_dir, roll_en, 1, 1.8f, 8);
     std::shared_ptr<Endstop> wrist_roll_endstop = std::make_shared<Endstop>(roll_endstop_pin, ENDSTOP_TYPE::UP);
 
     std::unique_ptr<Joint> wrist_roll_joint = std::make_unique<Joint>(3, wrist_roll_driver, wrist_roll_endstop,
@@ -252,7 +265,7 @@ Robot buildRobot(){
     pitch_endstop_pin.gpio_port = J5_ENDSTOP_GPIO_Port;
     pitch_endstop_pin.gpio_pin = J5_ENDSTOP_Pin;
     
-    std::unique_ptr<Driver> wrist_pitch_driver = std::make_unique<drivers::TMC2209>(4, pitch_step, pitch_dir, pitch_en, 20, 1.8f, 8);
+    std::unique_ptr<Driver> wrist_pitch_driver = std::make_unique<drivers::Driver>(4, pitch_step, pitch_dir, pitch_en, 20, 1.8f, 8);
     std::shared_ptr<Endstop> wrist_pitch_endstop = std::make_shared<Endstop>(pitch_endstop_pin, ENDSTOP_TYPE::UP);
 
     std::unique_ptr<Joint> wrist_pitch_joint = std::make_unique<Joint>(4, wrist_pitch_driver,

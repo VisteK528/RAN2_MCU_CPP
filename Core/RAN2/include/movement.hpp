@@ -15,8 +15,9 @@ public:
     float jointVelFromMotorVel(float motor_ang_vel);
     float motorVelFromJointVel(float joint_ang_vel);
     float getGearSpeedRatio() const;
-    std::vector<float> calculateSteps(unsigned int steps, float max_speed, float acceleration);
-    std::vector<float> accelerateToVelocity(float velocity, float acceleration = 0.5);
+
+    /*std::vector<float> calculateSteps(unsigned int steps, float max_speed, float acceleration);
+    std::vector<float> accelerateToVelocity(float velocity, float acceleration = 0.5);*/
 
     float getMinDelay(float max_speed);
     float getStartDelay(float acceleration) const;

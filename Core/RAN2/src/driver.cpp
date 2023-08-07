@@ -51,13 +51,6 @@ void drivers::Driver::setDirection(drivers::DIRECTION movement_direction) {
     }
 }
 
-drivers::DM556::DM556(uint8_t joint_number, GPIO_PIN pulse, GPIO_PIN direction, GPIO_PIN enable,
-                      uint16_t driver_resolution, float motor_resolution, uint16_t gear_teeth): Driver(
-                              joint_number, pulse, direction, enable, gear_teeth, motor_resolution, driver_resolution) {
-    this->max_speed = 2000;
-    this->max_acceleration = 0.05;
-}
-
 void drivers::Driver::initializeMovement(uint8_t joint_number, int mode, float max_speed_delay, float d0,
                                          int iterations) {
     movement_data[joint_number].step_count = 0;

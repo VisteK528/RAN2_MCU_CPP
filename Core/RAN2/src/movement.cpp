@@ -47,6 +47,7 @@ float Movement::getStartDelay(float acceleration) const {
     return 2000000.f * std::sqrt(2.f * angle / acceleration) * constant;
 }
 
+/*
 std::vector<float> Movement::calculateSteps(unsigned int steps, float max_speed, float acceleration) {
     float motor_max_speed = motorVelFromJointVel(max_speed);
     float motor_max_speed_delay = seconds2Microseconds(one_pulse_step/motor_max_speed);
@@ -131,4 +132,4 @@ std::vector<float> Movement::accelerateToVelocity(float velocity, float accelera
     }
 
     return seconds_delays;
-}
+}*/

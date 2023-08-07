@@ -19,27 +19,32 @@ typedef enum{
     radians
 } ANGLE_UNITS;
 
+typedef enum{
+    success,
+    failure
+} execution_status;
+
 class Robot{
 public:
     Robot(std::vector<std::unique_ptr<Joint>>& joints);
     Robot()=default;
 
-    void home();
-    void move2Default();
-    void moveJoint(uint8_t joint_number, float position, bool blocking=true);
-    void moveJoints(float* angles);
-    void move2Coordinates(float x, float y, float z, float yaw, float pitch, float roll);
-    void homeJoint(uint8_t joint_number);
-    void wait(uint32_t seconds);
-    void disableJoint(uint8_t joint_number);
-    void disableJoints();
-    void enableJoint(uint8_t joint_number);
-    void enableJoints();
+    execution_status home();
+    execution_status move2Default();
+    execution_status moveJoint(uint8_t joint_number, float position, bool blocking=true);
+    execution_status moveJoints(float* angles);
+    execution_status move2Coordinates(float x, float y, float z, float yaw, float pitch, float roll);
+    execution_status homeJoint(uint8_t joint_number);
+    execution_status wait(uint32_t seconds);
+    execution_status disableJoint(uint8_t joint_number);
+    execution_status disableJoints();
+    execution_status enableJoint(uint8_t joint_number);
+    execution_status enableJoints();
 
     // Units set / get functions
-    void setLengthUnits(LENGTH_UNITS units);
+    execution_status setLengthUnits(LENGTH_UNITS units);
     LENGTH_UNITS getLengthUnits();
-    void setAngleUnits(ANGLE_UNITS units);
+    execution_status setAngleUnits(ANGLE_UNITS units);
     ANGLE_UNITS getAngleUnits();
 
 private:

@@ -51,21 +51,6 @@ namespace drivers{
         void enableMotor();
         bool isEnabled();
         int getCount(uint8_t joint_number) const;
-
-    };
-
-    class TMC2209: public Driver{
-    public:
-        TMC2209(uint8_t joint_number, GPIO_PIN step, GPIO_PIN direction, GPIO_PIN enable, uint16_t gear_teeth, float motor_resolution,
-                uint16_t driver_resolution=8): Driver(joint_number, step, direction, enable, gear_teeth, motor_resolution, driver_resolution){};
-        TMC2209() = default;
-    };
-
-    class DM556: public Driver{
-    public:
-        DM556(uint8_t joint_number, GPIO_PIN pulse, GPIO_PIN direction, GPIO_PIN enable, uint16_t driver_resolution, float motor_resolution,
-              uint16_t gear_teeth);
-        DM556() = default;
     };
 };
 
