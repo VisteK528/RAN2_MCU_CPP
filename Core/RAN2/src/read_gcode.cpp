@@ -42,7 +42,13 @@ static uint8_t read_float(const char* line, float* value, uint16_t* char_counter
     (*value) = strto_f(number_start, &length);
 
     (*char_counter) += length;
-    return 1;
+    if(line[*char_counter] == '\n' || line[*char_counter] == '\r' || line[*char_counter] == '\0'
+       || line[*char_counter] == ';'){
+        return 0;
+    }
+    else{
+        return 1;
+    }
 }
 
 /** @brief Parses message and loads command/parameter letter and associated with it value into proper variables

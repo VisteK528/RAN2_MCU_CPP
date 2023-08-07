@@ -1,5 +1,10 @@
 #include "../include/robot.hpp"
 
+static void convertAllToDeg(float* angles_rad, uint8_t number){
+    for(int i = 0; i < number; i++){
+        angles_rad[i] = rad2Deg(angles_rad[i]);
+    }
+}
 
 Robot::Robot(std::vector<std::unique_ptr<Joint>>& joints) {
 
@@ -17,13 +22,15 @@ void Robot::home(){
 
     for(int i = 0; i < joints.size(); i++){
         printf("Homing joint: %d\n", i);
-        this->joints[i]->homeJoint();
+        homeJoint(i);
     }
     homed = true;
 }
 
 void Robot::homeJoint(uint8_t joint_number) {
-    joints[joint_number]->homeJoint();
+    if(joints[joint_number]->isEnabled()){
+        joints[joint_number]->homeJoint();
+    }
 }
 
 void Robot::wait(uint32_t ms) {
@@ -41,7 +48,7 @@ void Robot::moveJoint(uint8_t joint_number, float position, bool blocking) {
 }
 
 void Robot::moveJoints(float* angles) {
-    for(int i = 0; i < joints.size(); i++){
+    for(int i = 0; i < 6; i++){
         moveJoint(i, angles[i], false);
     }
 }
@@ -65,9 +72,28 @@ void Robot::move2Coordinates(float x, float y, float z, float yaw, float pitch, 
     matrix_init_f32(&rotation_matrix, 3, 3, rot_mat_d);
 
     k_algorithms->createRotationMatrix(yaw, pitch, roll, &rotation_matrix);
-    k_algorithms->inverseKinematics(x/100.f, y/100.f, z/100.f, &rotation_matrix, joint_angles);
+    for(int i = 0; i < 3; i ++){
+        printf("%f %f %f\n", rot_mat_d[3*i], rot_mat_d[3*i+1], rot_mat_d[3*i+2]);
+    }
+
+    k_algorithms->inverseKinematics(x, y, z, &rotation_matrix, joint_angles);
+
+    convertAllToDeg(joint_angles, 6);
 
     //TODO Add offsets handling before passing angles to the execution
+    // Temporarily
+    if(joint_angles[0] < 0){
+        joint_angles[0] += 360;
+    }
+
+    joint_angles[1] = 180.f - joint_angles[1];
+    joint_angles[2] = joint_angles[2] - 50.3f;
+    joint_angles[3] = -joint_angles[3];
+
+    for(int i = 0; i < 6; i++) {
+        printf("Theta%d: %f\n", i, joint_angles[i]);
+    }
+
     moveJoints(joint_angles);
 }
 
@@ -76,6 +102,7 @@ void Robot::move2Default() {
         moveJoint(0, 270, false);
         moveJoint(1, 60, false);
         moveJoint(2, 35, false);
+        moveJoint(3, 0.1, false);
         moveJoint(4, 112, false);
     }
 }
@@ -137,8 +164,8 @@ Robot buildRobot(){
     waist_joint->setMinPosition(-1);
     waist_joint->setMaxPosition(358);
 
-    waist_joint->setMaxVelocity(0.8);
-    waist_joint->setMaxAcceleration(2);
+    waist_joint->setMaxVelocity(1.6);
+    waist_joint->setMaxAcceleration(3);
 
     // Shoulder
     GPIO_PIN shoulder_step, shoulder_dir, shoulder_en, shoulder_endstop_pin;
@@ -158,7 +185,10 @@ Robot buildRobot(){
     std::unique_ptr<Joint> shoulder_joint = std::make_unique<Joint>(1, shoulder_driver, shoulder_endstop, 149,
                                                                     drivers::DIRECTION::CLOCKWISE);
     shoulder_joint->setHomingVelocity(0.16);
-    shoulder_joint->setMaxAcceleration(0.1);
+
+    shoulder_joint->setMaxVelocity(0.32);
+    shoulder_joint->setMaxAcceleration(0.2);
+
     shoulder_joint->setMaxPosition(171);
     shoulder_joint->setOffset(10);
 
@@ -181,8 +211,9 @@ Robot buildRobot(){
                                                                  drivers::DIRECTION::ANTICLOCKWISE);
 
     elbow_joint->setMaxPosition(70);
-    //elbow_joint->setBaseAngle(50.3);
     elbow_joint->setBaseAngle(48);
+    elbow_joint->setMaxVelocity(1.6);
+    elbow_joint->setMaxAcceleration(3);
 
     // Roll
     GPIO_PIN roll_step, roll_dir, roll_en, roll_endstop_pin;
@@ -202,12 +233,12 @@ Robot buildRobot(){
     std::unique_ptr<Joint> wrist_roll_joint = std::make_unique<Joint>(3, wrist_roll_driver, wrist_roll_endstop,
                                                                       1, drivers::DIRECTION::ANTICLOCKWISE);
 
-    wrist_roll_joint->setHomingAcceleration(0.25);
-    wrist_roll_joint->setHomingVelocity(0.5);
+    //wrist_roll_joint->setHomingAcceleration(0.25);
+    //wrist_roll_joint->setHomingVelocity(0.5);
     wrist_roll_joint->setHomingSteps(100);
 
     wrist_roll_joint->setMaxPosition(350);
-    wrist_roll_joint->setOffset(-22);
+    wrist_roll_joint->setOffset(-20);
 
     // Pitch
     GPIO_PIN pitch_step, pitch_dir, pitch_en, pitch_endstop_pin;
@@ -258,7 +289,9 @@ static void executeGGCODE(Robot& robot, uint16_t code, uint8_t parse_result, uin
             float pitch = 0;
             float roll = 0;
 
-            while((parse_result = parseMessage(&letter, &value, command_str, &counter)) == 1){
+            while(parse_result == 1){
+                parse_result = parseMessage(&letter, &value, command_str, &counter);
+
                 switch (letter) {
                     case 'X':
                         coordinates[0] = value;
@@ -292,6 +325,30 @@ static void executeGGCODE(Robot& robot, uint16_t code, uint8_t parse_result, uin
             }
             break;
         }
+        case 4:
+        {
+            uint32_t time = 0;
+            if(parse_result == 0){
+                //TODO Zachowanie takie samo jak w przypadku M400, ma zaczekać z przetwarzaniem kodu tak długo jak
+                // zakończone zostaną wszystkie ruchy
+                break;
+            }
+            else{
+                while(parse_result == 1){
+                    parse_result = parseMessage(&letter, &value, command_str, &counter);
+
+                    if(letter == 'S' && value >= 0){
+                        time += (uint32_t)seconds2Milliseconds(value);
+                    }
+                    else if(letter == 'P' && value >= 0){
+                        time += (uint32_t)value;
+                    }
+                }
+
+                robot.wait(time);
+            }
+
+        }
         case 27:
         {
             robot.move2Default();
@@ -303,7 +360,9 @@ static void executeGGCODE(Robot& robot, uint16_t code, uint8_t parse_result, uin
                 robot.home();
             }
             else{
-                while((parse_result = parseMessage(&letter, &value, command_str, &counter)) == 1){
+                while(parse_result == 1){
+                    parse_result = parseMessage(&letter, &value, command_str, &counter);
+
                     if(letter == 'J' && value >= 1 && value < 7){
                         robot.homeJoint((int)value - 1);
                     }
@@ -334,10 +393,14 @@ static void executeMGCODE(Robot& robot, uint16_t code, uint8_t parse_result, uin
     char letter;
 
     switch (code) {
+        case 0:
+            break;
         case 17:
         {
             if(parse_result == 1){
-                while(parseMessage(&letter, &value, command_str, &counter) == 1){
+                while(parse_result == 1){
+                    parse_result = parseMessage(&letter, &value, command_str, &counter);
+
                     if(letter == 'J' && value >= 1 && value < 7){
                         robot.enableJoint((int)value - 1);
                     }
@@ -351,7 +414,9 @@ static void executeMGCODE(Robot& robot, uint16_t code, uint8_t parse_result, uin
         case 18:
         {
             if(parse_result == 1){
-                while(parseMessage(&letter, &value, command_str, &counter) == 1){
+                while(parse_result == 1){
+                    parse_result = parseMessage(&letter, &value, command_str, &counter);
+
                     if(letter == 'J' && value >= 1 && value < 7){
                         robot.disableJoint((int)value - 1);
                     }
@@ -374,27 +439,27 @@ void executeGCODE(Robot& robot, const char* command_str) {
     char g_letter;
     float value;
 
-    if ((parse_result = parseMessage(&g_letter, &value, command_str, &counter)) == 1) {
-        switch (g_letter) {
-            case 'G':
-                executeGGCODE(robot, (int)value, parse_result, counter, command_str);
-                break;
-            case 'M':
-                executeMGCODE(robot, (int)value, parse_result, counter, command_str);
-                break;
-            case 'J':
-            {
-                auto joint_number = (uint8_t)value;
-                parseMessage(&g_letter, &value, command_str, &counter);
-                if(g_letter == 'P'){
-                    robot.moveJoint(joint_number-1, value);
-                }
-                break;
-            }
-            default:
-                break;
+    parse_result = parseMessage(&g_letter, &value, command_str, &counter);
 
+    switch (g_letter) {
+        case 'G':
+            executeGGCODE(robot, (int)value, parse_result, counter, command_str);
+            break;
+        case 'M':
+            executeMGCODE(robot, (int)value, parse_result, counter, command_str);
+            break;
+        case 'J':
+        {
+            auto joint_number = (uint8_t)value;
+            parseMessage(&g_letter, &value, command_str, &counter);
+            if(g_letter == 'P'){
+                robot.moveJoint(joint_number-1, value);
+            }
+            break;
         }
+        default:
+            break;
+
     }
 
 }

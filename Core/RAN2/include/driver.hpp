@@ -24,6 +24,8 @@ namespace drivers{
         float max_speed;
         float max_acceleration;
 
+        bool motor_enabled = true;
+
         DIRECTION current_direction=CLOCKWISE;
     public:
         GPIO_PIN direction;
@@ -47,6 +49,7 @@ namespace drivers{
         void stopMovement(uint8_t joint_number);
         void disableMotor();
         void enableMotor();
+        bool isEnabled();
         int getCount(uint8_t joint_number) const;
 
     };

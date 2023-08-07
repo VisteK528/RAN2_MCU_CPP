@@ -193,5 +193,9 @@ void Joint::disableMotor() {
     this->driver->disableMotor();
 }
 
+bool Joint::isEnabled() {
+    return this->driver->isEnabled();
+}
+
 
 

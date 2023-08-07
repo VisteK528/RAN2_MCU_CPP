@@ -131,10 +131,16 @@ bool drivers::Driver::getMovement(uint8_t joint_number) {
 
 void drivers::Driver::enableMotor() {
     HAL_GPIO_WritePin(enable.gpio_port, enable.gpio_pin, GPIO_PIN_RESET);
+    this->motor_enabled = true;
 }
 
 void drivers::Driver::disableMotor() {
     HAL_GPIO_WritePin(enable.gpio_port, enable.gpio_pin, GPIO_PIN_SET);
+    this->motor_enabled = false;
+}
+
+bool drivers::Driver::isEnabled() {
+    return motor_enabled;
 }
 
 static void accelerateToVelocity(GPIO_PIN step_pin, uint8_t joint_number, TIM_HandleTypeDef *htim){

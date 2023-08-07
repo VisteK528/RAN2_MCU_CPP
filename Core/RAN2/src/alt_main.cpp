@@ -32,6 +32,7 @@ uint8_t line_append(uint8_t value)
             line_buffer[line_length] = '\0';
             // przetwarzamy dane
             // zaczynamy zbieranie danych od nowa
+            printf("Command executed successfully: %d\n", line_length);
             line_length = 0;
             return 0;
         }

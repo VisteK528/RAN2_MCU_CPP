@@ -27,6 +27,7 @@ public:
 
     void disableMotor();
     void enableMotor();
+    bool isEnabled();
 
     void move2Pos(float position, bool blocking);
     void homeJoint();
