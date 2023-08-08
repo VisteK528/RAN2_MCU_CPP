@@ -1,4 +1,3 @@
-#include <utility>
 #include "../include/algorithm6dof.hpp"
 
 Algorithm6Dof::Algorithm6Dof(LINK_MAP link_map, float *offsets) {

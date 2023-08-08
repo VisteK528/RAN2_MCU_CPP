@@ -455,20 +455,18 @@ static execution_status executeMGCODE(Robot& robot, uint16_t code, uint8_t parse
 
 
 execution_status executeGCODE(Robot& robot, const char* command_str) {
-    uint8_t parse_result;
-    uint16_t counter;
+    uint8_t parse_result = 0;
+    uint16_t counter = 0;
     char g_letter;
-    float value;
+    float value = 0;
 
     parse_result = parseMessage(&g_letter, &value, command_str, &counter);
 
     switch (g_letter) {
         case 'G':
             return executeGGCODE(robot, (int)value, parse_result, counter, command_str);
-            break;
         case 'M':
             return executeMGCODE(robot, (int)value, parse_result, counter, command_str);
-            break;
         case 'J':
         {
             auto joint_number = (uint8_t)value;

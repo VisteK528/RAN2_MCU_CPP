@@ -74,7 +74,7 @@ int alt_main(){
     hagl_backend_t* display = hagl_init();
 
     hagl_clear(display);
-    hagl_put_text(display, L"RAN3 Soft©", 10, 10, rgb565(255, 255, 255), font10x20_ISO8859_1);
+    hagl_put_text(display, L"RAN3 Soft©", 0, 0, rgb565(255, 255, 255), font10x20_ISO8859_1);
     hagl_put_text(display, L"Command: ", 0, 50, rgb565(255, 255, 255), font6x9);
     hagl_put_text(display, L"Status: ", 0, 60, rgb565(255, 255, 255), font6x9);
     hagl_flush(display);
