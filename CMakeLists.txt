@@ -35,6 +35,7 @@ add_compile_options(-ffunction-sections -fdata-sections -fno-common -fmessage-le
 # Enable assembler files preprocessing
 add_compile_options($<$<COMPILE_LANGUAGE:ASM>:-x$<SEMICOLON>assembler-with-cpp>)
 
+add_compile_options(-Wall -fstack-usage -fstack-protector -fstack-check)
 if ("${CMAKE_BUILD_TYPE}" STREQUAL "Release")
     message(STATUS "Maximum optimization for speed")
     add_compile_options(-Ofast)
@@ -49,12 +50,16 @@ else ()
     add_compile_options(-Og -g)
 endif ()
 
-include_directories(Core/Inc Drivers/STM32F4xx_HAL_Driver/Inc Drivers/STM32F4xx_HAL_Driver/Inc/Legacy Drivers/CMSIS/Device/ST/STM32F4xx/Include Drivers/CMSIS/Include  Core/Inc Drivers/STM32F4xx_HAL_Driver/Inc Drivers/STM32F4xx_HAL_Driver/Inc/Legacy Drivers/CMSIS/Device/ST/STM32F4xx/Include Drivers/CMSIS/Include)
-link_directories(Core/RAN2/lib)
+include_directories(Core/Inc Drivers/STM32F4xx_HAL_Driver/Inc Drivers/STM32F4xx_HAL_Driver/Inc/Legacy
+        Drivers/CMSIS/Device/ST/STM32F4xx/Include Drivers/CMSIS/Include  Core/Inc Drivers/STM32F4xx_HAL_Driver/Inc
+        Drivers/STM32F4xx_HAL_Driver/Inc/Legacy Drivers/CMSIS/Device/ST/STM32F4xx/Include Drivers/CMSIS/Include
+        libraries/hagl/include libraries/NumericalMath/include libraries/tft_lcd/include libraries/tft_lcd/fonts)
+link_directories(libraries/NumericalMath/lib)
 
 add_definitions(-DDEBUG -DUSE_HAL_DRIVER -DSTM32F401xE)
 
-file(GLOB_RECURSE SOURCES "Core/*.*" "CMSIS/*.*" "Drivers/*.*")
+file(GLOB_RECURSE SOURCES "RAN2/*.*" "Core/*.*" "CMSIS/*.*" "Drivers/*.*" "libraries/hagl/*.*"
+        "libraries/NumericalMath/include/*.h" "libraries/tft_lcd/*.*")
 
 set(LINKER_SCRIPT ${CMAKE_SOURCE_DIR}/STM32F401RETX_FLASH.ld)
 
@@ -74,3 +79,4 @@ add_custom_command(TARGET ${PROJECT_NAME}.elf POST_BUILD
         COMMAND ${CMAKE_OBJCOPY} -Obinary $<TARGET_FILE:${PROJECT_NAME}.elf> ${BIN_FILE}
         COMMENT "Building ${HEX_FILE}
 Building ${BIN_FILE}")
+
