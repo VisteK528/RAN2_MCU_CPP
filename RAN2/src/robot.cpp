@@ -75,6 +75,7 @@ execution_status Robot::move2Coordinates(float x, float y, float z, float yaw, f
     }
 
     float rot_mat_d[9] = {};
+    float rotation_angles[3] = {yaw, pitch, roll};
 
     matrix_f32 rotation_matrix;
     matrix_init_f32(&rotation_matrix, 3, 3, rot_mat_d);
@@ -84,7 +85,7 @@ execution_status Robot::move2Coordinates(float x, float y, float z, float yaw, f
         printf("%f %f %f\n", rot_mat_d[3*i], rot_mat_d[3*i+1], rot_mat_d[3*i+2]);
     }
 
-    k_algorithms->inverseKinematics(x, y, z, &rotation_matrix, joint_angles);
+    k_algorithms->inverseKinematics(x, y, z, &rotation_matrix, joint_angles, rotation_angles);
 
     convertAllToDeg(joint_angles, 6);
 
@@ -96,7 +97,16 @@ execution_status Robot::move2Coordinates(float x, float y, float z, float yaw, f
 
     joint_angles[1] = 180.f - joint_angles[1];
     joint_angles[2] = joint_angles[2] - 50.3f;
-    joint_angles[3] = -joint_angles[3];
+    //joint_angles[3] = -joint_angles[3];
+    if(joint_angles[3] < 0){
+        joint_angles[3] += 360;
+    }
+
+    joint_angles[4] += 120;
+
+    if(joint_angles[5] < 0){
+        joint_angles[5] += 360;
+    }
 
     for(int i = 0; i < 6; i++) {
         printf("Theta%d: %f\n", i, joint_angles[i]);
@@ -251,7 +261,9 @@ Robot buildRobot(){
     elbow_roll_joint->setHomingSteps(100);
 
     elbow_roll_joint->setMaxPosition(350);
-    elbow_roll_joint->setOffset(-20);
+    elbow_roll_joint->setOffset(-18);
+    elbow_roll_joint->setMaxAcceleration(2);
+    elbow_roll_joint->setMaxVelocity(1.5);
 
     // Pitch
     GPIO_PIN pitch_step, pitch_dir, pitch_en, pitch_endstop_pin;
@@ -293,10 +305,10 @@ Robot buildRobot(){
     std::unique_ptr<Joint> wrist_roll_joint = std::make_unique<Joint>(5, wrist_roll_driver, 1,
                                                                        drivers::DIRECTION::CLOCKWISE, nullptr, wrist_roll_encoder);
 
-    wrist_roll_joint->setHomingSteps(100);
-
     wrist_roll_joint->setMaxAcceleration(4);
     wrist_roll_joint->setMaxVelocity(3);
+    wrist_roll_joint->setHomingVelocity(0.5);
+    wrist_roll_joint->setHomingAcceleration(1);
     
     
 

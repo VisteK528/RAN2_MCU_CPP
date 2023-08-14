@@ -40,9 +40,9 @@ void Algorithm6Dof::createRotationMatrix(float yaw, float pitch, float roll, mat
 
 
 void Algorithm6Dof::inverseKinematics(float x, float y, float z, matrix_f32* rot_mat,
-                                      float* angles) {
+                                      float* angles, float* rotation_angles) {
 
-    float theta[6];
+    /*float theta[6];
     coordinates tcp, wcp, elbow;
     float hyp, long_hyp, short_hyp;
     float alfa, beta;
@@ -137,6 +137,121 @@ void Algorithm6Dof::inverseKinematics(float x, float y, float z, matrix_f32* rot
     theta[4] = acos((rot_3_6.p_data)[0]);
     theta[3] = asin(rot_3_6.p_data[3] / sin(theta[4]));
     theta[5] = asin(rot_3_6.p_data[1] / (sin(theta[4])));
+
+    for(int i = 0; i < 6; i++){
+        angles[i] = theta[i];
+    }*/
+
+    // New version V2.0
+
+    float theta[6];
+    coordinates tcp, wcp, elbow;
+    float hyp, long_hyp, short_hyp;
+    float alfa, beta;
+
+    // Set position of the TCP(Tool center point)
+    arm_position_points[5].x = x;
+    arm_position_points[5].y = y;
+    arm_position_points[5].z = z;
+    tcp = arm_position_points[5];
+
+    // Calculate position of the WCP (Wrist center point) by transforming the TCP coordinates using Rot0_6 matrix
+    wcp.x = tcp.x - linkMap[EE_LENGTH] * rot_mat->p_data[2];
+    wcp.y = tcp.y - linkMap[EE_LENGTH] * rot_mat->p_data[5];
+    wcp.z = tcp.z - linkMap[EE_LENGTH] * rot_mat->p_data[8];
+    arm_position_points[4] = wcp;
+
+    // Calculate the angle for J1 (Waist)
+    theta[0] = atan2(wcp.y, wcp.x);
+
+    // Calculate the angle for J2 (Shoulder)
+    // Long hypotenuse is the guiding radius on the XY Plane
+    long_hyp = sqrt(pow(wcp.x, 2) + pow(wcp.y, 2));
+    alfa = atan((wcp.z - linkMap[BASE_HEIGHT] - linkMap[SHOULDER_HEIGHT]) / long_hyp);
+
+    // Hypotenuse of the shoulder - elbow triangle
+    hyp = long_hyp / cos(alfa);
+
+    beta = acos((pow(linkMap[ELBOW_LENGTH], 2) - pow(linkMap[SHOULDER_LENGTH], 2) - pow(hyp, 2)) / (
+            -2 * linkMap[SHOULDER_LENGTH] * hyp));
+
+    theta[1] = alfa + beta;
+
+    // Calculate the angle for J3 (Elbow)
+    theta[2] = acos((pow(hyp, 2) - pow(linkMap[SHOULDER_LENGTH], 2) - pow(linkMap[ELBOW_LENGTH], 2) )/ (
+            -2 * linkMap[SHOULDER_LENGTH] * linkMap[ELBOW_LENGTH]));
+
+    elbow.z = linkMap[BASE_HEIGHT]+ linkMap[SHOULDER_HEIGHT] + sin(theta[1]) * linkMap[SHOULDER_LENGTH];
+
+    short_hyp = cos(theta[1]) * linkMap[SHOULDER_LENGTH];
+    elbow.x = short_hyp * cos(theta[0]);
+    elbow.y = short_hyp * sin(theta[0]);
+
+    arm_position_points[3] = elbow;
+
+    // Matrices
+    float rot_0_1_d[9] = {
+            cos(theta[0]), 0, -sin(theta[0]),
+            -sin(theta[0]), 0, -cos(theta[0]),
+            0, 1, 0
+    };
+
+    float rot_1_2_d[9] = {
+            cos(theta[1]), -sin(theta[1]), 0,
+            sin(theta[1]), cos(theta[1]), 0,
+            0, 0, 1
+    };
+
+    float rot_2_3_d[9] = {
+            sin((float)M_PI - theta[2]), 0, cos((float)M_PI - theta[2]),
+            cos((float)M_PI - theta[2]), 0, -sin((float)M_PI - theta[2]),
+            0, 1, 0
+    };
+
+    float rot_0_2_d[9];
+    float rot_0_3_d[9];
+    float rot_3_6_d[9];
+    float rot_inv_0_3_d[9] = {
+            1, 0, 0,
+            0, 1, 0,
+            0, 0, 1
+    };
+
+    matrix_f32 rot_0_1, rot_1_2, rot_2_3, rot_0_3, rot_3_6, inv_rot_0_3, rot_0_2;
+
+    matrix_init_f32(&rot_0_1, 3, 3, rot_0_1_d);
+    matrix_init_f32(&rot_1_2, 3, 3, rot_1_2_d);
+    matrix_init_f32(&rot_2_3, 3, 3, rot_2_3_d);
+    matrix_init_f32(&rot_0_3, 3, 3, rot_0_3_d);
+    matrix_init_f32(&rot_3_6, 3, 3, rot_3_6_d);
+    matrix_init_f32(&inv_rot_0_3, 3, 3, rot_inv_0_3_d);
+    matrix_init_f32(&rot_0_2, 3, 3, rot_0_2_d);
+
+    matrix_mult(&rot_0_1, &rot_1_2, &rot_0_2);
+    matrix_mult(&rot_0_2, &rot_2_3, &rot_0_3);
+
+
+    inverse_matrix(&rot_0_3, &inv_rot_0_3);
+
+
+    matrix_mult(&inv_rot_0_3, rot_mat, &rot_3_6);
+
+    theta[4] = acos((rot_3_6.p_data)[8]);
+    theta[3] = asin(rot_3_6.p_data[5] / sin(theta[4]));
+
+    if(rot_3_6.p_data[1] / (sin(theta[4])) > -1 && rot_3_6.p_data[1] / (sin(theta[4])) < 1){
+        theta[5] =  asin(rot_3_6.p_data[1] / (sin(theta[4])));
+    }
+    else{
+        theta[5] = 0;
+    }
+
+    if(rotation_angles[1] <= M_PI/2){
+        theta[3] = -theta[3];
+    }
+    else if(rotation_angles[1] > M_PI/2){
+        theta[3] = theta[3] - (float)M_PI;
+    }
 
     for(int i = 0; i < 6; i++){
         angles[i] = theta[i];
