@@ -101,6 +101,9 @@ void drivers::Driver::initializeMovement(uint8_t joint_number, int mode, float m
         else if(joint_number == 4){
             HAL_TIM_Base_Start_IT(&htim9);
         }
+        else if(joint_number == 5){
+            HAL_TIM_Base_Start_IT(&htim11);
+        }
     }
 
     /*  CPU Frequency: 80MHz
@@ -167,6 +170,9 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
     }
     else if(htim->Instance == TIM9){
         joint_number = 4;
+    }
+    else if(htim->Instance == TIM11){
+        joint_number = 5;
     }
 
     if(joint_number < 6){

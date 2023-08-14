@@ -287,11 +287,11 @@ Robot buildRobot(){
 
     std::shared_ptr<MagneticEncoder> wrist_roll_encoder = std::make_shared<MagneticEncoder>(0x36, 2, &hi2c1, 329.f, 1.f);
 
-    std::unique_ptr<Driver> wrist_roll_driver = std::make_unique<drivers::Driver>(4, wrist_roll_step, wrist_roll_dir, wrist_roll_en, 1, 1.8f, 8);
+    std::unique_ptr<Driver> wrist_roll_driver = std::make_unique<drivers::Driver>(5, wrist_roll_step, wrist_roll_dir, wrist_roll_en, 1, 1.8f, 8);
 
 
     std::unique_ptr<Joint> wrist_roll_joint = std::make_unique<Joint>(5, wrist_roll_driver, 1,
-                                                                       drivers::DIRECTION::ANTICLOCKWISE, nullptr, wrist_roll_encoder);
+                                                                       drivers::DIRECTION::CLOCKWISE, nullptr, wrist_roll_encoder);
 
     wrist_roll_joint->setHomingSteps(100);
 

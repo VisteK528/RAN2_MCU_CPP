@@ -49,7 +49,7 @@ bool MagneticEncoder::homeEncoder() {
 
     rawAngle = as5600_read_raw_angle(i2c, encoderAddress);
 
-    if(rawAngle > homingPosition + 0.1 || rawAngle < homingPosition - 0.1){
+    if(rawAngle > homingPosition + 0.5 || rawAngle < homingPosition - 0.5){
         homed = false;
         return false;
     }

@@ -28,6 +28,8 @@ Joint::Joint(uint8_t joint_number, std::unique_ptr<drivers::Driver>& driver,
     else{
         status = homing_device_error;
     }
+    this->endstop = sensor;
+    this->encoder = encoder;
 }
 
 JOINT_STATUS Joint::getJointStatus() {
