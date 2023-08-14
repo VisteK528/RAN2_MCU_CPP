@@ -1,17 +1,37 @@
 #include "../include/joint.hpp"
 
-Joint::Joint(uint8_t joint_number, std::unique_ptr<drivers::Driver>& driver, std::shared_ptr<Endstop> sensor,
-             uint16_t gear_teeth, DIRECTION homing_direction) {
+Joint::Joint(uint8_t joint_number, std::unique_ptr<drivers::Driver>& driver,
+             uint16_t gear_teeth, DIRECTION homing_direction, std::shared_ptr<Endstop> sensor, std::shared_ptr<MagneticEncoder> encoder) {
     
     this->joint_number = joint_number;
     this->driver = std::move(driver);
-    this->endstop = std::move(sensor);
 
     this->gear_teeth = gear_teeth;
     this->homing_direction = homing_direction;
 
     this->movement = Movement(this->driver->getMotorResolution(), this->driver->getDriverResolution(),
                               this->driver->getGearTeeth(), gear_teeth);
+
+    if(sensor != nullptr){
+        setEndstopHoming();
+        endstop_homing = true;
+        encoder_homing = false;
+        status = operational;
+    }
+    else if(sensor == nullptr && encoder != nullptr){
+        if(encoder->getDegPerRotation() == 1.f){
+            endstop_homing = false;
+            encoder_homing = true;
+            status = operational;
+        }
+    }
+    else{
+        status = homing_device_error;
+    }
+}
+
+JOINT_STATUS Joint::getJointStatus() {
+    return this->status;
 }
 
 uint8_t Joint::getJointNumber() const {
@@ -112,62 +132,94 @@ void Joint::move2Pos(float position, bool blocking) {
     }
 }
 
+bool Joint::setEndstopHoming() {
+    endstop_homing = true;
+    endstop_homing = false;
+    return true;
+}
+
+bool Joint::setEncoderHoming() {
+    if(encoder != nullptr){
+        if(encoder->getDegPerRotation() == 1.f){
+            endstop_homing = false;
+            encoder_homing = true;
+            return true;
+        }
+    }
+    return false;
+}
+
 void Joint::homeJoint() {
     DIRECTION first_direction;
     DIRECTION second_direction;
-    if(homing_direction == ANTICLOCKWISE){
+    if (homing_direction == ANTICLOCKWISE) {
         first_direction = ANTICLOCKWISE;
         second_direction = CLOCKWISE;
-    }
-    else{
+    } else {
         first_direction = CLOCKWISE;
         second_direction = ANTICLOCKWISE;
     }
 
-    while(true){
-        accelerateJoint(first_direction, homing_velocity, homing_acceleration);
-        while(driver->getMovement(joint_number) && !endstop->checkSensor());
-        driver->stopMovement(joint_number);
-
-
-        if(endstop->checkSensor()){
-            moveJointBySteps(homing_steps, second_direction, max_velocity, max_acceleration, true);
-
-            accelerateJoint(first_direction, homing_velocity/5.f, homing_acceleration);
-            while(driver->getMovement(joint_number) && !endstop->checkSensor());
+    if (endstop_homing) {
+        while (true) {
+            accelerateJoint(first_direction, homing_velocity, homing_acceleration);
+            while (driver->getMovement(joint_number) && !endstop->checkSensor());
             driver->stopMovement(joint_number);
 
-            if(endstop->checkSensor()){
-                break;
-            }
-            else{
-                moveJoint(first_direction, homing_velocity/5.f);
-                while(driver->getMovement(joint_number) && !endstop->checkSensor());
-                driver->stopMovement(joint_number);
-                break;
-            }
-        }
-        else{
-            moveJoint(first_direction, homing_velocity);
-            while(driver->getMovement(joint_number) && !endstop->checkSensor());
-            driver->stopMovement(joint_number);
 
-            if(endstop->checkSensor()){
+            if (endstop->checkSensor()) {
                 moveJointBySteps(homing_steps, second_direction, max_velocity, max_acceleration, true);
 
-                accelerateJoint(first_direction, homing_velocity/5.f, homing_acceleration);
-                while(driver->getMovement(joint_number) && !endstop->checkSensor());
+                accelerateJoint(first_direction, homing_velocity / 5.f, homing_acceleration);
+                while (driver->getMovement(joint_number) && !endstop->checkSensor());
                 driver->stopMovement(joint_number);
 
-                if(endstop->checkSensor()){
+                if (endstop->checkSensor()) {
                     break;
-                }
-                else{
-                    moveJoint(first_direction, homing_velocity/5.f);
-                    while(driver->getMovement(joint_number) && !endstop->checkSensor());
+                } else {
+                    moveJoint(first_direction, homing_velocity / 5.f);
+                    while (driver->getMovement(joint_number) && !endstop->checkSensor());
                     driver->stopMovement(joint_number);
                     break;
                 }
+            } else {
+                moveJoint(first_direction, homing_velocity);
+                while (driver->getMovement(joint_number) && !endstop->checkSensor());
+                driver->stopMovement(joint_number);
+
+                if (endstop->checkSensor()) {
+                    moveJointBySteps(homing_steps, second_direction, max_velocity, max_acceleration, true);
+
+                    accelerateJoint(first_direction, homing_velocity / 5.f, homing_acceleration);
+                    while (driver->getMovement(joint_number) && !endstop->checkSensor());
+                    driver->stopMovement(joint_number);
+
+                    if (endstop->checkSensor()) {
+                        break;
+                    } else {
+                        moveJoint(first_direction, homing_velocity / 5.f);
+                        while (driver->getMovement(joint_number) && !endstop->checkSensor());
+                        driver->stopMovement(joint_number);
+                        break;
+                    }
+                }
+            }
+        }
+    } else {
+        while (true) {
+            accelerateJoint(first_direction, homing_velocity, homing_acceleration);
+            while (driver->getMovement(joint_number) && !encoder->homeEncoder());
+            driver->stopMovement(joint_number);
+
+
+            if (encoder->homeEncoder()) {
+                break;
+            } else {
+                moveJoint(first_direction, homing_velocity);
+                while (driver->getMovement(joint_number) && !encoder->homeEncoder());
+                driver->stopMovement(joint_number);
+
+                break;
             }
         }
     }
@@ -183,6 +235,13 @@ void Joint::homeJoint() {
         }
     }
     joint_position = 0;
+}
+
+float Joint::getEncoderPosition() {
+    if(encoder != nullptr){
+        return encoder->getPosition();
+    }
+    return 0;
 }
 
 void Joint::enableMotor() {

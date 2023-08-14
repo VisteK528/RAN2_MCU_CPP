@@ -172,8 +172,8 @@ Robot buildRobot(){
     std::unique_ptr<Driver> waist_driver = std::make_unique<drivers::Driver>(0, waist_step, waist_dir, waist_en, 20, 0.9f, 8);
     std::shared_ptr<Endstop> waist_endstop = std::make_shared<Endstop>(waist_endstop_pin, ENDSTOP_TYPE::UP);
 
-    std::unique_ptr<Joint> waist_joint = std::make_unique<Joint>(0, waist_driver, waist_endstop, 125,
-                                                                 drivers::DIRECTION::ANTICLOCKWISE);
+    std::unique_ptr<Joint> waist_joint = std::make_unique<Joint>(0, waist_driver, 125,
+                                                                 drivers::DIRECTION::ANTICLOCKWISE, waist_endstop);
     waist_joint->setMinPosition(-1);
     waist_joint->setMaxPosition(358);
 
@@ -195,8 +195,8 @@ Robot buildRobot(){
     std::unique_ptr<Driver> shoulder_driver = std::make_unique<Driver>(1, shoulder_step, shoulder_dir, shoulder_en, 20, 1.8f, 8);
     std::shared_ptr<Endstop> shoulder_endstop = std::make_shared<Endstop>(shoulder_endstop_pin, ENDSTOP_TYPE::UP);
 
-    std::unique_ptr<Joint> shoulder_joint = std::make_unique<Joint>(1, shoulder_driver, shoulder_endstop, 149,
-                                                                    drivers::DIRECTION::CLOCKWISE);
+    std::unique_ptr<Joint> shoulder_joint = std::make_unique<Joint>(1, shoulder_driver, 149,
+                                                                    drivers::DIRECTION::CLOCKWISE, shoulder_endstop);
     shoulder_joint->setHomingVelocity(0.16);
 
     shoulder_joint->setMaxVelocity(0.32);
@@ -220,38 +220,38 @@ Robot buildRobot(){
     std::unique_ptr<Driver> elbow_driver = std::make_unique<drivers::Driver>(2, elbow_step, elbow_dir, elbow_en, 20, 0.9, 8);
     std::shared_ptr<Endstop> elbow_endstop = std::make_shared<Endstop>(elbow_endstop_pin, ENDSTOP_TYPE::UP);
 
-    std::unique_ptr<Joint> elbow_joint = std::make_unique<Joint>(2, elbow_driver, elbow_endstop, 62,
-                                                                 drivers::DIRECTION::ANTICLOCKWISE);
+    std::unique_ptr<Joint> elbow_joint = std::make_unique<Joint>(2, elbow_driver, 62,
+                                                                 drivers::DIRECTION::ANTICLOCKWISE, elbow_endstop);
 
     elbow_joint->setMaxPosition(70);
     elbow_joint->setBaseAngle(48);
     elbow_joint->setMaxVelocity(1.6);
     elbow_joint->setMaxAcceleration(3);
 
-    // Roll
-    GPIO_PIN roll_step, roll_dir, roll_en, roll_endstop_pin;
-    roll_step.gpio_port = J4_STEP_GPIO_Port;
-    roll_step.gpio_pin = J4_STEP_Pin;
-    roll_dir.gpio_port = J4_DIR_GPIO_Port;
-    roll_dir.gpio_pin = J4_DIR_Pin;
-    roll_en.gpio_port = J4_EN_GPIO_Port;
-    roll_en.gpio_pin = J4_EN_Pin;
+    // Elbow roll
+    GPIO_PIN elbow_roll_step, elbow_roll_dir, elbow_roll_en, elbow_roll_endstop_pin;
+    elbow_roll_step.gpio_port = J4_STEP_GPIO_Port;
+    elbow_roll_step.gpio_pin = J4_STEP_Pin;
+    elbow_roll_dir.gpio_port = J4_DIR_GPIO_Port;
+    elbow_roll_dir.gpio_pin = J4_DIR_Pin;
+    elbow_roll_en.gpio_port = J4_EN_GPIO_Port;
+    elbow_roll_en.gpio_pin = J4_EN_Pin;
 
-    roll_endstop_pin.gpio_port = J4_ENDSTOP_GPIO_Port;
-    roll_endstop_pin.gpio_pin = J4_ENDSTOP_Pin;
+    elbow_roll_endstop_pin.gpio_port = J4_ENDSTOP_GPIO_Port;
+    elbow_roll_endstop_pin.gpio_pin = J4_ENDSTOP_Pin;
     
-    std::unique_ptr<Driver> wrist_roll_driver = std::make_unique<drivers::Driver>(3, roll_step, roll_dir, roll_en, 1, 1.8f, 8);
-    std::shared_ptr<Endstop> wrist_roll_endstop = std::make_shared<Endstop>(roll_endstop_pin, ENDSTOP_TYPE::UP);
+    std::unique_ptr<Driver> elbow_roll_driver = std::make_unique<drivers::Driver>(3, elbow_roll_step, elbow_roll_dir, elbow_roll_en, 1, 1.8f, 8);
+    std::shared_ptr<Endstop> elbow_roll_endstop = std::make_shared<Endstop>(elbow_roll_endstop_pin, ENDSTOP_TYPE::UP);
 
-    std::unique_ptr<Joint> wrist_roll_joint = std::make_unique<Joint>(3, wrist_roll_driver, wrist_roll_endstop,
-                                                                      1, drivers::DIRECTION::ANTICLOCKWISE);
+    std::unique_ptr<Joint> elbow_roll_joint = std::make_unique<Joint>(3, elbow_roll_driver,
+                                                                      1, drivers::DIRECTION::ANTICLOCKWISE, elbow_roll_endstop);
 
-    //wrist_roll_joint->setHomingAcceleration(0.25);
-    //wrist_roll_joint->setHomingVelocity(0.5);
-    wrist_roll_joint->setHomingSteps(100);
+    //elbow_roll_joint->setHomingAcceleration(0.25);
+    //elbow_roll_joint->setHomingVelocity(0.5);
+    elbow_roll_joint->setHomingSteps(100);
 
-    wrist_roll_joint->setMaxPosition(350);
-    wrist_roll_joint->setOffset(-20);
+    elbow_roll_joint->setMaxPosition(350);
+    elbow_roll_joint->setOffset(-20);
 
     // Pitch
     GPIO_PIN pitch_step, pitch_dir, pitch_en, pitch_endstop_pin;
@@ -268,21 +268,45 @@ Robot buildRobot(){
     std::unique_ptr<Driver> wrist_pitch_driver = std::make_unique<drivers::Driver>(4, pitch_step, pitch_dir, pitch_en, 20, 1.8f, 8);
     std::shared_ptr<Endstop> wrist_pitch_endstop = std::make_shared<Endstop>(pitch_endstop_pin, ENDSTOP_TYPE::UP);
 
-    std::unique_ptr<Joint> wrist_pitch_joint = std::make_unique<Joint>(4, wrist_pitch_driver,
-                                                                       wrist_pitch_endstop, 40,
-                                                                       drivers::DIRECTION::ANTICLOCKWISE);
+    std::unique_ptr<Joint> wrist_pitch_joint = std::make_unique<Joint>(4, wrist_pitch_driver, 40,
+                                                                       drivers::DIRECTION::ANTICLOCKWISE, wrist_pitch_endstop);
     wrist_pitch_joint->setHomingSteps(100);
 
     wrist_pitch_joint->setMaxAcceleration(4);
     wrist_pitch_joint->setMaxVelocity(3);
     wrist_pitch_joint->setMaxPosition(250);
 
+    // Wrist roll
+    GPIO_PIN wrist_roll_step, wrist_roll_dir, wrist_roll_en;
+    wrist_roll_step.gpio_port = J6_STEP_GPIO_Port;
+    wrist_roll_step.gpio_pin = J6_STEP_Pin;
+    wrist_roll_dir.gpio_port = J6_DIR_GPIO_Port;
+    wrist_roll_dir.gpio_pin = J6_DIR_Pin;
+    wrist_roll_en.gpio_port = J6_EN_GPIO_Port;
+    wrist_roll_en.gpio_pin = J6_EN_Pin;
+
+    std::shared_ptr<MagneticEncoder> wrist_roll_encoder = std::make_shared<MagneticEncoder>(0x36, 2, &hi2c1, 329.f, 1.f);
+
+    std::unique_ptr<Driver> wrist_roll_driver = std::make_unique<drivers::Driver>(4, wrist_roll_step, wrist_roll_dir, wrist_roll_en, 1, 1.8f, 8);
+
+
+    std::unique_ptr<Joint> wrist_roll_joint = std::make_unique<Joint>(5, wrist_roll_driver, 1,
+                                                                       drivers::DIRECTION::ANTICLOCKWISE, nullptr, wrist_roll_encoder);
+
+    wrist_roll_joint->setHomingSteps(100);
+
+    wrist_roll_joint->setMaxAcceleration(4);
+    wrist_roll_joint->setMaxVelocity(3);
+    
+    
+
     std::vector<std::unique_ptr<Joint>> joints;
     joints.push_back(std::move(waist_joint));
     joints.push_back(std::move(shoulder_joint));
     joints.push_back(std::move(elbow_joint));
-    joints.push_back(std::move(wrist_roll_joint));
+    joints.push_back(std::move(elbow_roll_joint));
     joints.push_back(std::move(wrist_pitch_joint));
+    joints.push_back(std::move(wrist_roll_joint));
 
     Robot robot(joints);
     return robot;

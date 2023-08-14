@@ -7,12 +7,18 @@
 #include <iostream>
 #include <memory>
 #include "gpio.h"
+#include "magnetic_encoder.hpp"
+
+typedef enum{
+    operational,
+    homing_device_error
+} JOINT_STATUS;
 
 using namespace drivers;
 
 class Joint{
 public:
-    Joint(uint8_t number, std::unique_ptr<Driver>& driver, std::shared_ptr<Endstop> sensor, uint16_t gear_teeth, DIRECTION homing_direction);
+    Joint(uint8_t number, std::unique_ptr<Driver>& driver, uint16_t gear_teeth, DIRECTION homing_direction, std::shared_ptr<Endstop> sensor = nullptr, std::shared_ptr<MagneticEncoder> encoder = nullptr);
 
     uint8_t getJointNumber() const;
     void setHomingSteps(uint16_t homing_steps);
@@ -31,6 +37,12 @@ public:
 
     void move2Pos(float position, bool blocking);
     void homeJoint();
+    bool setEncoderHoming();
+    bool setEndstopHoming();
+    JOINT_STATUS getJointStatus();
+
+    float getEncoderPosition();
+
 private:
     unsigned int degrees2Steps(float degrees);
     void accelerateJoint(DIRECTION direction, float velocity, float acceleration);
@@ -38,6 +50,7 @@ private:
     void moveJointBySteps(unsigned int steps, DIRECTION direction, float max_velocity, float max_acceleration, bool blocking);
     std::unique_ptr<Driver> driver;
     std::shared_ptr<Endstop> endstop;
+    std::shared_ptr<MagneticEncoder> encoder;
 
     // Variables
     float min_pos = 0;
@@ -62,6 +75,9 @@ private:
 
     uint16_t gear_teeth;
     bool homed = false;
+    bool endstop_homing = true;
+    bool encoder_homing = false;
+    JOINT_STATUS status;
 };
 
 #endif // RAN2_MCU_CPP_DRIVER_HPP
