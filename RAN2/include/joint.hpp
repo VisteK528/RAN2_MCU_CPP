@@ -41,7 +41,8 @@ public:
     bool setEndstopHoming();
     JOINT_STATUS getJointStatus();
 
-    float getEncoderPosition();
+    void updateEncoder();
+    bool getEncoderData(MagneticEncoderData* data);
 
 private:
     unsigned int degrees2Steps(float degrees);

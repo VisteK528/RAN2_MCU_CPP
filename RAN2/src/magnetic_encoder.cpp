@@ -1,3 +1,4 @@
+#include <cmath>
 #include "../include/magnetic_encoder.hpp"
 
 static void selectI2CChannels(uint8_t i) {
@@ -41,6 +42,7 @@ void MagneticEncoder::checkQuadrant() {
         }
         previousQuadrant = quadrant;
     }
+    oldTotalAngle = totalAngle;
     totalAngle = (float)turns*360.f + rawAngle;
 }
 
@@ -106,4 +108,25 @@ void MagneticEncoder::setHomingPosition(float position) {
 
 float MagneticEncoder::getDegPerRotation() {
     return this->degPerRotation;
+}
+
+void MagneticEncoder::updateParameters() {
+    float delta_angle;
+    float elapsedTime = 50.f/1000;           //Measurement approximately every 50ms
+    updatePosition();
+
+    if(totalAngle > 0 && oldTotalAngle > 0){
+        delta_angle = totalAngle - oldTotalAngle;
+    }
+    else if(totalAngle < 0 && oldTotalAngle < 0){
+        delta_angle = -1*oldTotalAngle - (-1)*totalAngle;
+    }
+    else{
+        delta_angle = totalAngle + oldTotalAngle;
+    }
+
+
+    oldVelocity = velocity;
+    this->velocity = delta_angle/elapsedTime;
+    this->acceleration = (velocity - oldVelocity)/elapsedTime;
 }

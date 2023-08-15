@@ -3,6 +3,12 @@
 
 #include "as5600.hpp"
 
+typedef struct{
+    float position;
+    float velocity;
+    float acceleration;
+} MagneticEncoderData;
+
 class MagneticEncoder{
 public:
     MagneticEncoder(uint8_t encoderAddress, uint8_t channelNumber, I2C_HandleTypeDef* i2c, float homingPosition, float degPerRotation);
@@ -56,28 +62,32 @@ public:
      * */
     float getDegPerRotation();
 
+    void updateParameters();
+
 
 private:
     // Checks in which quadrant the encoder is currently. Then updates the total angle value.
     void checkQuadrant();
 
-    float totalAngle;
-    float rawAngle;
-    float currentPosition;
-    float oldPosition;
+    volatile float totalAngle;
+    volatile float oldTotalAngle;
+    volatile float rawAngle;
+    volatile float currentPosition;
+    volatile float oldPosition;
     float degPerRotation;
 
-    int turns;
-    float offset;
+    volatile int turns = 0;
+    volatile float offset = 0;
     bool homed;
 
-    unsigned char quadrant;
-    unsigned char previousQuadrant;
+    volatile unsigned char quadrant;
+    volatile unsigned char previousQuadrant;
 
-    float velocity;
-    float acceleration;
+    volatile float oldVelocity = 0;
+    volatile float velocity = 0;
+    volatile float acceleration = 0;
 
-    float homingPosition;
+    float homingPosition = 0;
 
     uint8_t channelNumber;
     uint8_t encoderAddress;
