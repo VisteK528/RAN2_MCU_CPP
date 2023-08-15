@@ -34,8 +34,8 @@ void Algorithm6Dof::createRotationMatrix(float yaw, float pitch, float roll, mat
 
     matrix_init_f32(&buffer_matrix, 3, 3, buffer_matrix_d);
 
-    matrix_mult(&yaw_matrix, &pitch_matrix, &buffer_matrix);
-    matrix_mult(&buffer_matrix, &roll_matrix, rot_mat);
+    matrix_mul_f32(&yaw_matrix, &pitch_matrix, &buffer_matrix);
+    matrix_mul_f32(&buffer_matrix, &roll_matrix, rot_mat);
 }
 
 
@@ -227,14 +227,14 @@ void Algorithm6Dof::inverseKinematics(float x, float y, float z, matrix_f32* rot
     matrix_init_f32(&inv_rot_0_3, 3, 3, rot_inv_0_3_d);
     matrix_init_f32(&rot_0_2, 3, 3, rot_0_2_d);
 
-    matrix_mult(&rot_0_1, &rot_1_2, &rot_0_2);
-    matrix_mult(&rot_0_2, &rot_2_3, &rot_0_3);
+    matrix_mul_f32(&rot_0_1, &rot_1_2, &rot_0_2);
+    matrix_mul_f32(&rot_0_2, &rot_2_3, &rot_0_3);
 
 
-    inverse_matrix(&rot_0_3, &inv_rot_0_3);
+    inverse_matrix_f32(&rot_0_3, &inv_rot_0_3);
 
 
-    matrix_mult(&inv_rot_0_3, rot_mat, &rot_3_6);
+    matrix_mul_f32(&inv_rot_0_3, rot_mat, &rot_3_6);
 
     theta[4] = acos((rot_3_6.p_data)[8]);
     theta[3] = asin(rot_3_6.p_data[5] / sin(theta[4]));

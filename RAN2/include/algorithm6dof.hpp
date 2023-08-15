@@ -6,7 +6,7 @@
 #include <cmath>
 
 extern "C" {
-    #include "matrix_math.h"
+    #include "../../libraries/NumericalMath/include/matrix_math.h"
 }
 
 typedef enum {
