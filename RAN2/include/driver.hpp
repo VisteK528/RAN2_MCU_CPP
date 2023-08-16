@@ -54,6 +54,8 @@ namespace drivers{
     };
 };
 
+void DriverHandleCallback(TIM_HandleTypeDef* htim);
+
 typedef struct {
     unsigned char mode : 3;
     //! What part of the speed ramp we are in.

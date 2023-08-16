@@ -70,6 +70,10 @@ void HAL_SPI_TxCpltCallback(SPI_HandleTypeDef *hspi)
     }
 }
 
+void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim){
+    DriverHandleCallback(htim);
+}
+
 int alt_main(){
     hagl_backend_t* display = hagl_init();
 

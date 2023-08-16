@@ -154,8 +154,7 @@ static void accelerateToVelocity(GPIO_PIN step_pin, uint8_t joint_number, TIM_Ha
     }
 }
 
-void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
-{
+void DriverHandleCallback(TIM_HandleTypeDef* htim){
     uint8_t joint_number = 255;
     if (htim->Instance == TIM10) {
         joint_number = 0;
@@ -201,7 +200,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
             step_pin.gpio_port = J6_STEP_GPIO_Port;
             step_pin.gpio_pin = J6_STEP_Pin;
         }
-        
+
         switch (movement_data[joint_number].mode) {
             case 0:
                 accelerateToVelocity(step_pin, joint_number, htim);
@@ -275,4 +274,3 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
         }
     }
 }
-

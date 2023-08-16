@@ -57,7 +57,7 @@ private:
             {SHOULDER_HEIGHT, 9.f},
             {SHOULDER_LENGTH, 20.76355f},
             {ELBOW_LENGTH, 16.50985f},
-            {EE_LENGTH, 5},
+            {EE_LENGTH, 8},
     };
 
     // Offsets - ultimately stored in EEPROM / FLASH memory on the robot board, for now in software
