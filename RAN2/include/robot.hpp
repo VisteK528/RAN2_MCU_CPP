@@ -70,8 +70,8 @@ public:
     operation_status setAngleUnits(ANGLE_UNITS units);
     ANGLE_UNITS getAngleUnits();
 
-    execution_status updateEncoders();
-    execution_status getEncoderData(uint8_t joint_number, MagneticEncoderData* data);
+    operation_status updateEncoders();
+    operation_status getEncoderData(uint8_t joint_number, MagneticEncoderData* data);
 
 private:
     // Kinematics algorithms related variables

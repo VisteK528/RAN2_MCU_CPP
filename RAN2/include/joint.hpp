@@ -22,7 +22,7 @@
  *  Encoder present, but degPerRotation is not equal to 1                               0x02
  *  Endstop and encoder not present, homing impossible                                  0x03
  *  Endstop not present, homing by endstop impossible                                   0x04
- *  Encoder not present, homing by encoder impossible                                   0x05
+ *  Encoder not present                                                                 0x05
  *
  *  Movement not possible, joint is not homed                                           0x06
  *  Homing not possible, joint motor is disabled                                        0x07
@@ -52,13 +52,13 @@ public:
 
     operation_status move2Pos(float position, bool blocking);
     operation_status homeJoint();
-    operation_status setEncoderHoming();
-    operation_status setEndstopHoming();
-
     operation_status getJointStatus();
 
-    void updateEncoder();
-    bool getEncoderData(MagneticEncoderData* data);
+    bool encoderAvailable();
+    operation_status setEncoderHoming();
+    operation_status setEndstopHoming();
+    operation_status updateEncoder();
+    operation_status getEncoderData(MagneticEncoderData* data);
 
 private:
     unsigned int degrees2Steps(float degrees);

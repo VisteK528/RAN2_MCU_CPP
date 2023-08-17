@@ -111,7 +111,11 @@ bool MagneticEncoder::isHomed() {
     return this->homed;
 }
 
-void MagneticEncoder::updatePosition() {
+operation_status MagneticEncoder::updatePosition() {
+    if(as5600_check_presence(i2c, encoderAddress) == 1){
+        return operation_status_init_encoder(encoderNumber, failure, 0x02);
+    }
+
    if(homed){
        selectI2CChannels(channelNumber);
        rawAngle = as5600_read_raw_angle(i2c, encoderAddress);
@@ -123,7 +127,9 @@ void MagneticEncoder::updatePosition() {
            currentPosition += 360;
        }
        checkQuadrant();
+       return operation_status_init_encoder(encoderNumber, success, 0x00);
    }
+    return operation_status_init_encoder(encoderNumber, failure, 0x05);
 }
 
 float MagneticEncoder::getPosition() {
@@ -155,10 +161,15 @@ float MagneticEncoder::getDegPerRotation() {
     return this->degPerRotation;
 }
 
-void MagneticEncoder::updateParameters() {
+operation_status MagneticEncoder::updateParameters() {
     float delta_angle;
     float elapsedTime = 50.f/1000;           //Measurement approximately every 50ms
-    updatePosition();
+    operation_status status;
+    status = updatePosition();
+
+    if(status.result == failure){
+        return status;
+    }
 
     if(totalAngle > 0 && oldTotalAngle > 0){
         delta_angle = totalAngle - oldTotalAngle;
@@ -174,4 +185,5 @@ void MagneticEncoder::updateParameters() {
     oldVelocity = velocity;
     this->velocity = delta_angle/elapsedTime;
     this->acceleration = (velocity - oldVelocity)/elapsedTime;
+    return operation_status_init_encoder(encoderNumber, success, 0x00);
 }

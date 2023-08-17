@@ -10,6 +10,11 @@
 static char line_buffer[LINE_MAX_LENGTH + 1];
 static wchar_t line_buffer_display[LINE_MAX_LENGTH + 1];
 static uint32_t line_length;
+bool start = false;
+
+operation_status robot_operation_status;
+operation_status background_robot_operation_status;
+uint8_t to_be_displayed = 0;
 
 Robot my_robot;
 
@@ -67,10 +72,6 @@ void HAL_SPI_TxCpltCallback(SPI_HandleTypeDef *hspi)
     }
 }
 
-void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim){
-    DriverHandleCallback(htim);
-}
-
 int alt_main(){
     HAL_TIM_Base_Start_IT(&htim1);
 
@@ -81,34 +82,33 @@ int alt_main(){
     printf("Starting...\n");
 
     my_robot = buildRobot();
-    operation_status status;
 
     printf("Status ready!\n");
     printf("Command: \n");
 
     MagneticEncoderData data;
-
+    start = true;
     while (1)
     {
         //Test
-        my_robot.getEncoderData(6, &data);
-        printf("Position: %f\tVelocity: %f\tAcceleration: %f\n", data.position, data.velocity, data.acceleration);
+        //my_robot.getEncoderData(6, &data);
+        //printf("Position: %f\tVelocity: %f\tAcceleration: %f\n", data.position, data.velocity, data.acceleration);
 
         uint8_t uart_value;
         if (HAL_UART_Receive(&huart2, &uart_value, 1, 0) == HAL_OK){
             if(line_append(uart_value) == 0){
-                status.result = in_progress;
-                display.printStatus(status);
+                robot_operation_status.result = in_progress;
+                display.printStatus(robot_operation_status);
 
-                status = executeGCODE(my_robot, line_buffer);
+                robot_operation_status = executeGCODE(my_robot, line_buffer);
                 memset(line_buffer, 0, 80);
-                if(status.result ==  success){
+                if(robot_operation_status.result ==  success){
                     printf("Command executed successfully\n");
                 }
                 else{
                     printf("Command execution failed\n");
                 }
-                display.printStatus(status);
+                display.printStatus(robot_operation_status);
 
             }
             else if(uart_value != '\0' && line_length >= 0){
@@ -121,5 +121,24 @@ int alt_main(){
             fflush(stdin);
             fflush(stdout);
         }
+
+        if(to_be_displayed > 0){
+            display.printStatus(background_robot_operation_status);
+            to_be_displayed--;
+        }
+    }
+}
+
+void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim){
+    if(htim == &htim1){
+        if(start){
+            background_robot_operation_status = my_robot.updateEncoders();
+            if(background_robot_operation_status.result == failure){
+                to_be_displayed++;
+            }
+        }
+    }
+    else{
+        DriverHandleCallback(htim);
     }
 }

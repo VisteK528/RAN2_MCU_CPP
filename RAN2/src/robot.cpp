@@ -189,18 +189,28 @@ ANGLE_UNITS Robot::getAngleUnits() {
     return angleUnits;
 }
 
-execution_status Robot::updateEncoders() {
+operation_status Robot::updateEncoders() {
+    operation_status status;
     for(uint8_t i = 0; i < 6; i++){
-        this->joints[i]->updateEncoder();
+        if(this->joints[i]->encoderAvailable()){
+            status = this->joints[i]->updateEncoder();
+
+            if(status.result == failure){
+                return status;
+            }
+        }
     }
-    return success;
+    return operation_status_init_robot(success, 0x00);
 }
 
-execution_status Robot::getEncoderData(uint8_t joint_number, MagneticEncoderData *data) {
-    if(this->joints[joint_number-1]->getEncoderData(data)){
-        return success;
+operation_status Robot::getEncoderData(uint8_t joint_number, MagneticEncoderData *data) {
+    operation_status status;
+    status = this->joints[joint_number-1]->getEncoderData(data);
+
+    if(status.result == failure){
+        return status;
     }
-    return failure;
+    return operation_status_init_robot(success, 0x00);
 }
 
 Robot buildRobot(){

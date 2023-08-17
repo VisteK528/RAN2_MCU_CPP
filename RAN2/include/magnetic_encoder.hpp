@@ -10,13 +10,14 @@
  *  - Encoders (Numbers from 1 to 6)    0x0f - 0x14
  *
  *  Operation result codes:
- *  Result                                  Code
- *  Operation ended successfully            0x00
- *  Operation continue                      0x01
+ *  Result                                                  Code
+ *  Operation ended successfully                            0x00
+ *  Operation continue                                      0x01
  *
- *  Connection cannot be established        0x02
- *  Magnet too weak                         0x03
- *  Magnet too strong                       0x04
+ *  Connection cannot be established                        0x02
+ *  Magnet too weak                                         0x03
+ *  Magnet too strong                                       0x04
+ *  Encoder not homed, cannot update position               0x05
  *
  * */
 
@@ -46,7 +47,7 @@ public:
     /** @brief Updates position values (current position, totalAngle, rawAngle).
      *  @returns None
      * */
-    void updatePosition();
+    operation_status updatePosition();
 
     /** @brief Returns current position of the encoder, always between 0 and 360 degrees.
      * */
@@ -81,7 +82,7 @@ public:
      * */
     float getDegPerRotation();
 
-    void updateParameters();
+    operation_status updateParameters();
 
 
 private:

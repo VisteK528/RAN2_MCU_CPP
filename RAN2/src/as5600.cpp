@@ -17,7 +17,7 @@ static const uint8_t angle_high = 0x0E; // Angle (11:8)
 /// @returns data type: uint8_t - raw data read from the selected AS5500 register
 static uint8_t as5600_read_from_single_register(I2C_HandleTypeDef* i2c, uint8_t ADDRESS, uint8_t REGISTER_ADDRESS){
     uint8_t data = 0;
-    HAL_I2C_Mem_Read(i2c, ADDRESS<<1, REGISTER_ADDRESS, 1, &data, 1, HAL_MAX_DELAY);
+    HAL_I2C_Mem_Read(i2c, ADDRESS<<1, REGISTER_ADDRESS, 1, &data, 1, 1000);
     return data;
 }
 
@@ -37,7 +37,7 @@ static uint16_t as5600_read_from_double_register(I2C_HandleTypeDef* i2c, uint8_t
 }
 
 uint8_t as5600_check_presence(I2C_HandleTypeDef* i2c, uint8_t ADDRESS){
-    HAL_StatusTypeDef device_status = HAL_I2C_IsDeviceReady(i2c, ADDRESS<<1, 5, HAL_MAX_DELAY);
+    HAL_StatusTypeDef device_status = HAL_I2C_IsDeviceReady(i2c, ADDRESS<<1, 5, 1000);
 
     if(device_status != HAL_OK){
         return 1;

@@ -293,13 +293,6 @@ operation_status Joint::homeJoint() {
     return operation_status_init_joint(joint_number, success, 0x00);
 }
 
-float Joint::getEncoderPosition() {
-    if(encoder != nullptr){
-        return encoder->getPosition();
-    }
-    return 0;
-}
-
 operation_status Joint::enableMotor() {
     this->driver->enableMotor();
     return operation_status_init_joint(joint_number, success, 0x00);
@@ -314,19 +307,34 @@ bool Joint::isMotorEnabled() {
     return this->driver->isEnabled();
 }
 
-void Joint::updateEncoder() {
+bool Joint::encoderAvailable() {
     if(this->encoder != nullptr){
-        this->encoder->updateParameters();
+        return true;
+    }
+    return false;
+}
+
+operation_status Joint::updateEncoder() {
+    operation_status status;
+    if(this->encoder != nullptr){
+        status = this->encoder->updateParameters();
+
+        if(status.result == failure){
+            return status;
+        }
+    }
+    else{
+        return operation_status_init_joint(joint_number, failure, 0x05);
     }
 }
 
-bool Joint::getEncoderData(MagneticEncoderData *data) {
+operation_status Joint::getEncoderData(MagneticEncoderData *data) {
     if(encoder != nullptr){
         data->position = encoder->getPosition();
         data->velocity = encoder->getVelocity();
         data->acceleration = encoder->getAcceleration();
-        return true;
+        return operation_status_init_joint(joint_number, success, 0x00);
     }
-    return false;
+    return operation_status_init_joint(joint_number, failure, 0x05);
 }
 
