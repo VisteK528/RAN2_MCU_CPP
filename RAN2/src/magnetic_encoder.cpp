@@ -9,13 +9,58 @@ static void selectI2CChannels(uint8_t i) {
     HAL_I2C_Master_Transmit(&hi2c1, 0x70<<1, temp, 1, 100);
 }
 
-MagneticEncoder::MagneticEncoder(uint8_t encoderAddress, uint8_t channelNumber, I2C_HandleTypeDef *i2c,
-                                 float homing_position, float degPerRotation) {
+static operation_status operation_status_init_encoder(uint8_t encoder_number, operation_result result, operation_result_code code){
+    operation_module_code module;
+    switch (encoder_number) {
+        case 0:
+            module = encoder1;
+            break;
+        case 1:
+            module = encoder2;
+            break;
+        case 2:
+            module = encoder3;
+            break;
+        case 3:
+            module = encoder4;
+            break;
+        case 4:
+            module = encoder5;
+            break;
+        case 5:
+            module = encoder6;
+            break;
+        default:
+            return operation_status_init(encoder1, failure, code);
+
+    }
+    return operation_status_init(module, result, code);
+}
+
+MagneticEncoder::MagneticEncoder(uint8_t encoderNumber, uint8_t encoderAddress, uint8_t channelNumber,
+                                 I2C_HandleTypeDef *i2c, float homing_position, float degPerRotation) {
+    this->encoderNumber = encoderNumber;
     this->encoderAddress = encoderAddress;
     this->channelNumber = channelNumber;
     this->i2c = i2c;
     this->homingPosition = homing_position;
     this->degPerRotation = degPerRotation;
+}
+
+operation_status MagneticEncoder::checkEncoder() {
+    uint8_t status;
+    status = as5600_init(i2c, encoderAddress);
+
+    if(status == 1){
+        return operation_status_init_encoder(encoderNumber, failure, 0x02);
+    }
+    else if(status == 2){
+        return operation_status_init_encoder(encoderNumber, failure, 0x03);
+    }
+    else if(status == 3){
+        return operation_status_init_encoder(encoderNumber, failure, 0x04);
+    }
+    return operation_status_init_encoder(encoderNumber, success, 0x00);
 }
 
 void MagneticEncoder::checkQuadrant() {

@@ -1,5 +1,33 @@
 #include "../include/joint.hpp"
 
+static operation_status operation_status_init_joint(uint8_t joint_number, operation_result result, operation_result_code code){
+    operation_module_code module;
+    switch (joint_number) {
+        case 0:
+            module = joint1;
+            break;
+        case 1:
+            module = joint2;
+            break;
+        case 2:
+            module = joint3;
+            break;
+        case 3:
+            module = joint4;
+            break;
+        case 4:
+            module = joint5;
+            break;
+        case 5:
+            module = joint6;
+            break;
+        default:
+            return operation_status_init(joint1, failure, code);
+
+    }
+    return operation_status_init(module, result, code);
+}
+
 Joint::Joint(uint8_t joint_number, std::unique_ptr<drivers::Driver>& driver,
              uint16_t gear_teeth, DIRECTION homing_direction, std::shared_ptr<Endstop> sensor, std::shared_ptr<MagneticEncoder> encoder) {
     
@@ -16,24 +44,27 @@ Joint::Joint(uint8_t joint_number, std::unique_ptr<drivers::Driver>& driver,
         setEndstopHoming();
         endstop_homing = true;
         encoder_homing = false;
-        status = operational;
+        current_joint_status = operation_status_init_joint(joint_number, success, 0x00);
     }
     else if(sensor == nullptr && encoder != nullptr){
         if(encoder->getDegPerRotation() == 1.f){
             endstop_homing = false;
             encoder_homing = true;
-            status = operational;
+            current_joint_status = operation_status_init_joint(joint_number, success, 0x00);
+        }
+        else{
+            current_joint_status = operation_status_init_joint(joint_number, failure, 0x02);
         }
     }
     else{
-        status = homing_device_error;
+        current_joint_status = operation_status_init_joint(joint_number, failure, 0x03);
     }
     this->endstop = sensor;
     this->encoder = encoder;
 }
 
-JOINT_STATUS Joint::getJointStatus() {
-    return this->status;
+operation_status Joint::getJointStatus() {
+    return this->current_joint_status;
 }
 
 uint8_t Joint::getJointNumber() const {
@@ -103,7 +134,7 @@ void Joint::moveJointBySteps(unsigned int steps, drivers::DIRECTION direction, f
     }
 }
 
-void Joint::move2Pos(float position, bool blocking) {
+operation_status Joint::move2Pos(float position, bool blocking) {
     if(homed){
         if(min_pos < position && position < max_pos){
             float new_position = joint_position - position;
@@ -130,28 +161,39 @@ void Joint::move2Pos(float position, bool blocking) {
             unsigned int steps = degrees2Steps(new_position);
             moveJointBySteps(steps, move_direction, max_velocity, max_acceleration, blocking);
             joint_position = position;
+            return operation_status_init_joint(joint_number, success, 0x00);
         }
+    }
+    return operation_status_init_joint(joint_number, failure, 0x06);
+}
+
+operation_status Joint::setEndstopHoming() {
+    endstop_homing = true;
+    endstop_homing = false;
+
+    if(endstop != nullptr){
+        return operation_status_init_joint(joint_number, success, 0x00);
+    }
+    else{
+        return operation_status_init_joint(joint_number, failure, 0x04);
     }
 }
 
-bool Joint::setEndstopHoming() {
-    endstop_homing = true;
-    endstop_homing = false;
-    return true;
-}
-
-bool Joint::setEncoderHoming() {
+operation_status Joint::setEncoderHoming() {
     if(encoder != nullptr){
         if(encoder->getDegPerRotation() == 1.f){
             endstop_homing = false;
             encoder_homing = true;
-            return true;
+            return operation_status_init_joint(joint_number, success, 0x00);
+        }
+        else{
+            return operation_status_init_joint(joint_number, failure, 0x02);
         }
     }
-    return false;
+    return operation_status_init_joint(joint_number, failure, 0x05);
 }
 
-void Joint::homeJoint() {
+operation_status Joint::homeJoint() {
     DIRECTION first_direction;
     DIRECTION second_direction;
     if (homing_direction == ANTICLOCKWISE) {
@@ -208,6 +250,13 @@ void Joint::homeJoint() {
             }
         }
     } else {
+        operation_status encoder_status;
+        encoder_status = encoder->checkEncoder();
+
+        if(encoder_status.result == failure){
+            return encoder_status;
+        }
+
         while (true) {
             accelerateJoint(first_direction, homing_velocity, homing_acceleration);
             while (driver->getMovement(joint_number) && !encoder->homeEncoder());
@@ -237,6 +286,7 @@ void Joint::homeJoint() {
         }
     }
     joint_position = 0;
+    return operation_status_init_joint(joint_number, success, 0x00);
 }
 
 float Joint::getEncoderPosition() {
@@ -246,17 +296,16 @@ float Joint::getEncoderPosition() {
     return 0;
 }
 
-void Joint::enableMotor() {
+operation_status Joint::enableMotor() {
     this->driver->enableMotor();
+    return operation_status_init_joint(joint_number, success, 0x00);
 }
 
-void Joint::disableMotor() {
+operation_status Joint::disableMotor() {
     this->driver->disableMotor();
+    return operation_status_init_joint(joint_number, success, 0x00);
 }
 
-bool Joint::isEnabled() {
+bool Joint::isMotorEnabled() {
     return this->driver->isEnabled();
 }
-
-
-

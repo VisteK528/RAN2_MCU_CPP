@@ -87,7 +87,7 @@ int alt_main(){
     printf("Starting...\n");
 
     Robot my_robot = buildRobot();
-    execution_status status;
+    operation_status status;
 
     printf("Status ready!\n");
     printf("Command: \n");
@@ -99,7 +99,7 @@ int alt_main(){
             if(line_append(uart_value) == 0){
                 status = executeGCODE(my_robot, line_buffer);
                 memset(line_buffer, 0, 80);
-                if(status == success){
+                if(status.result ==  success){
                     printf("Command executed successfully\n");
 
                     hagl_fill_rectangle_xywh(display, 6*9, 60, 160-10+6*9, 9, rgb565(0, 0, 0));

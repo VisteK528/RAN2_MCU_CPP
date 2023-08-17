@@ -6,6 +6,15 @@ static void convertAllToDeg(float* angles_rad, uint8_t number){
     }
 }
 
+static operation_status operation_status_init_robot(operation_result result, operation_result_code code){
+    return operation_status_init(robot, result, code);
+}
+
+static operation_status operation_status_init_gcode_reader(operation_result result, operation_result_code code){
+    return operation_status_init(gcode_reader, result, code);
+}
+
+
 Robot::Robot(std::vector<std::unique_ptr<Joint>>& joints) {
     // Initialize joints
     this->joints.reserve(joints.size());
@@ -17,51 +26,61 @@ Robot::Robot(std::vector<std::unique_ptr<Joint>>& joints) {
     this->k_algorithms = std::make_unique<Algorithm6Dof>(map, joint_offsets);
 }
 
-execution_status Robot::home(){
+operation_status Robot::home(){
+    operation_status status;
     for(uint16_t i = 0; i < joints.size(); i++){
-        if(homeJoint(i) != success){
-            return failure;
+        status = homeJoint(i);
+        if(status.result == failure){
+            return status;
         }
     }
     homed = true;
-    return success;
+    return operation_status_init_robot(success, 0x00);
 }
 
-execution_status Robot::homeJoint(uint8_t joint_number) {
-    if(joints[joint_number]->isEnabled()){
-        joints[joint_number]->homeJoint();
-        return success;
+operation_status Robot::homeJoint(uint8_t joint_number) {
+    operation_status status;
+    status = joints[joint_number]->homeJoint();
+
+    if(status.result == failure){
+        return status;
     }
-    return failure;
+    return operation_status_init_robot(success, 0x00);
 }
 
-execution_status Robot::wait(uint32_t ms) {
+operation_status Robot::wait(uint32_t ms) {
     HAL_Delay(ms);
-    return success;
+    return operation_status_init_robot(success, 0x00);
 }
 
-execution_status Robot::moveJoint(uint8_t joint_number, float position, bool blocking) {
+operation_status Robot::moveJoint(uint8_t joint_number, float position, bool blocking) {
+    operation_status status;
+
     if(angleUnits == radians){
         position = rad2Deg(position);
     }
 
-    if(homed){
-        joints[joint_number]->move2Pos(position, blocking);
-        return success;
+    status = joints[joint_number]->move2Pos(position, blocking);
+
+    if(status.result == failure){
+        return status;
     }
-    return failure;
+    return operation_status_init_robot(success, 0x00);
 }
 
-execution_status Robot::moveJoints(float* angles) {
+operation_status Robot::moveJoints(float* angles) {
+    operation_status status;
     for(int i = 0; i < 6; i++){
-        if(moveJoint(i, angles[i], false) != success){
-            return failure;
+        status = moveJoint(i, angles[i], false);
+
+        if(status.result == failure){
+            return status;
         }
     }
-    return success;
+    return operation_status_init_robot(success, 0x00);
 }
 
-execution_status Robot::move2Coordinates(float x, float y, float z, float yaw, float pitch, float roll) {
+operation_status Robot::move2Coordinates(float x, float y, float z, float yaw, float pitch, float roll) {
     if(lengthUnits == inches){
         x = inches2Millimeters(x);
         y = inches2Millimeters(x);
@@ -115,51 +134,55 @@ execution_status Robot::move2Coordinates(float x, float y, float z, float yaw, f
     return moveJoints(joint_angles);
 }
 
-execution_status Robot::move2Default() {
+operation_status Robot::move2Default() {
     float angles[6] = {270.f, 60.f, 35.f, 0.1f, 112.f, 0.1f};
     return moveJoints(angles);
 }
 
-execution_status Robot::enableJoint(uint8_t joint_number) {
-    joints[joint_number]->enableMotor();
-    return success;
+operation_status Robot::enableJoint(uint8_t joint_number) {
+    return joints[joint_number]->enableMotor();
 }
 
-execution_status Robot::enableJoints() {
+operation_status Robot::enableJoints() {
+    operation_status status;
     for(int i = 0; i < joints.size(); i++){
-        if(enableJoint(i) != success){
-            return failure;
+        status = enableJoint(i);
+
+        if(status.result == failure){
+            return status;
         }
     }
-    return success;
+    return operation_status_init_robot(success, 0x00);
 }
 
-execution_status Robot::disableJoint(uint8_t joint_number) {
-    joints[joint_number]->disableMotor();
-    return success;
+operation_status Robot::disableJoint(uint8_t joint_number) {
+    return joints[joint_number]->disableMotor();
 }
 
-execution_status Robot::disableJoints() {
+operation_status Robot::disableJoints() {
+    operation_status status;
     for(int i = 0; i < joints.size(); i++){
-        if(disableJoint(i) != success){
-            return failure;
+        status = disableJoint(i);
+
+        if(status.result == failure){
+            return status;
         }
     }
-    return success;
+    return operation_status_init_robot(success, 0x00);
 }
 
-execution_status Robot::setLengthUnits(LENGTH_UNITS units) {
+operation_status Robot::setLengthUnits(LENGTH_UNITS units) {
     this->lengthUnits = units;
-    return success;
+    return operation_status_init_robot(success, 0x00);
 }
 
 LENGTH_UNITS Robot::getLengthUnits() {
     return lengthUnits;
 }
 
-execution_status Robot::setAngleUnits(ANGLE_UNITS units) {
+operation_status Robot::setAngleUnits(ANGLE_UNITS units) {
     this->angleUnits = units;
-    return success;
+    return operation_status_init_robot(success, 0x00);
 }
 
 ANGLE_UNITS Robot::getAngleUnits() {
@@ -297,7 +320,7 @@ Robot buildRobot(){
     wrist_roll_en.gpio_port = J6_EN_GPIO_Port;
     wrist_roll_en.gpio_pin = J6_EN_Pin;
 
-    std::shared_ptr<MagneticEncoder> wrist_roll_encoder = std::make_shared<MagneticEncoder>(0x36, 2, &hi2c1, 310.f, 1.f);
+    std::shared_ptr<MagneticEncoder> wrist_roll_encoder = std::make_shared<MagneticEncoder>(6, 0x36, 2, &hi2c1, 310.f, 1.f);
 
     std::unique_ptr<Driver> wrist_roll_driver = std::make_unique<drivers::Driver>(5, wrist_roll_step, wrist_roll_dir, wrist_roll_en, 1, 1.8f, 8);
 
@@ -324,10 +347,10 @@ Robot buildRobot(){
     return robot;
 }
 
-static execution_status executeGGCODE(Robot& robot, uint16_t code, uint8_t parse_result, uint16_t counter, const char* command_str){
+static operation_status executeGGCODE(Robot& robot, uint16_t code, uint8_t parse_result, uint16_t counter, const char* command_str){
     float value;
     char letter;
-    execution_status status;
+    operation_status status;
 
     switch (code) {
         case 00:
@@ -414,7 +437,7 @@ static execution_status executeGGCODE(Robot& robot, uint16_t code, uint8_t parse
 
                     if(letter == 'J' && value >= 1 && value < 7){
                         status = robot.homeJoint((int)value - 1);
-                        if(status == failure){
+                        if(status.result == failure){
                             return status;
                         }
                     }
@@ -434,13 +457,13 @@ static execution_status executeGGCODE(Robot& robot, uint16_t code, uint8_t parse
             break;
 
     }
-    return failure;
+    return operation_status_init_gcode_reader(failure, 0x02);
 }
 
-static execution_status executeMGCODE(Robot& robot, uint16_t code, uint8_t parse_result, uint16_t counter, const char* command_str){
+static operation_status executeMGCODE(Robot& robot, uint16_t code, uint8_t parse_result, uint16_t counter, const char* command_str){
     float value;
     char letter;
-    execution_status status;
+    operation_status status;
 
     switch (code) {
         case 0:
@@ -453,7 +476,7 @@ static execution_status executeMGCODE(Robot& robot, uint16_t code, uint8_t parse
 
                     if(letter == 'J' && value >= 1 && value < 7){
                         status = robot.enableJoint((int)value - 1);
-                        if(status == failure){
+                        if(status.result == failure){
                             return status;
                         }
                     }
@@ -472,7 +495,7 @@ static execution_status executeMGCODE(Robot& robot, uint16_t code, uint8_t parse
 
                     if(letter == 'J' && value >= 1 && value < 7){
                         status = robot.disableJoint((int)value - 1);
-                        if(status == failure){
+                        if(status.result ==  failure){
                             return status;
                         }
                     }
@@ -486,11 +509,11 @@ static execution_status executeMGCODE(Robot& robot, uint16_t code, uint8_t parse
         default:
             break;
     }
-    return failure;
+    return operation_status_init_gcode_reader(failure, 0x02);
 }
 
 
-execution_status executeGCODE(Robot& robot, const char* command_str) {
+operation_status executeGCODE(Robot& robot, const char* command_str) {
     uint8_t parse_result = 0;
     uint16_t counter = 0;
     char g_letter;
@@ -516,5 +539,5 @@ execution_status executeGCODE(Robot& robot, const char* command_str) {
             break;
 
     }
-    return failure;
+    return operation_status_init_gcode_reader(failure, 0x02);
 }

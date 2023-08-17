@@ -8,6 +8,34 @@
 #include "algorithm6dof.hpp"
 #include "read_gcode.h"
 #include "utilities.hpp"
+#include "errors.hpp"
+
+
+/*  Operation_status information (Robot)
+ *
+ *  Module codes used in this module:
+ *  - Robot                                                                             0x00
+ *
+ *  Operation result codes:
+ *  Result                                                                              Code
+ *  Operation ended successfully                                                        0x00
+ *  Operation continue                                                                  0x01
+ *
+ ** */
+
+/*  Operation_status information (GCODE Reader)
+ *
+ *  Module codes used in this module:
+ *  - GCODE Reader                                                                      0x02
+ *
+ *  Operation result codes:
+ *  Result                                                                              Code
+ *  Operation ended successfully                                                        0x00
+ *  Operation continue                                                                  0x01
+ *
+ *  GCODE command cannot be decoded                                                     0x02
+ ** */
+
 
 typedef enum {
     millimeters,
@@ -19,32 +47,27 @@ typedef enum{
     radians
 } ANGLE_UNITS;
 
-typedef enum{
-    success,
-    failure
-} execution_status;
-
 class Robot{
 public:
     Robot(std::vector<std::unique_ptr<Joint>>& joints);
     Robot()=default;
 
-    execution_status home();
-    execution_status move2Default();
-    execution_status moveJoint(uint8_t joint_number, float position, bool blocking=true);
-    execution_status moveJoints(float* angles);
-    execution_status move2Coordinates(float x, float y, float z, float yaw, float pitch, float roll);
-    execution_status homeJoint(uint8_t joint_number);
-    execution_status wait(uint32_t seconds);
-    execution_status disableJoint(uint8_t joint_number);
-    execution_status disableJoints();
-    execution_status enableJoint(uint8_t joint_number);
-    execution_status enableJoints();
+    operation_status home();
+    operation_status move2Default();
+    operation_status moveJoint(uint8_t joint_number, float position, bool blocking=true);
+    operation_status moveJoints(float* angles);
+    operation_status move2Coordinates(float x, float y, float z, float yaw, float pitch, float roll);
+    operation_status homeJoint(uint8_t joint_number);
+    operation_status wait(uint32_t seconds);
+    operation_status disableJoint(uint8_t joint_number);
+    operation_status disableJoints();
+    operation_status enableJoint(uint8_t joint_number);
+    operation_status enableJoints();
 
     // Units set / get functions
-    execution_status setLengthUnits(LENGTH_UNITS units);
+    operation_status setLengthUnits(LENGTH_UNITS units);
     LENGTH_UNITS getLengthUnits();
-    execution_status setAngleUnits(ANGLE_UNITS units);
+    operation_status setAngleUnits(ANGLE_UNITS units);
     ANGLE_UNITS getAngleUnits();
 
 private:
@@ -81,6 +104,6 @@ private:
 };
 
 Robot buildRobot();
-execution_status executeGCODE(Robot& robot, const char* command_str);
+operation_status executeGCODE(Robot& robot, const char* command_str);
 
 #endif //ROBOTARMNUMBER2CPP_ROBOT_HPP

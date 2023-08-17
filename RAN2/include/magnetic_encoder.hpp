@@ -2,10 +2,29 @@
 #define RAN2_MCU_CPP_MAGNETIC_ENCODER_HPP
 
 #include "as5600.hpp"
+#include "errors.hpp"
+
+/*  Operation_status information
+ *
+ *  Module codes used in this module:
+ *  - Encoders (Numbers from 1 to 6)    0x0f - 0x14
+ *
+ *  Operation result codes:
+ *  Result                                  Code
+ *  Operation ended successfully            0x00
+ *  Operation continue                      0x01
+ *
+ *  Connection cannot be established        0x02
+ *  Magnet too weak                         0x03
+ *  Magnet too strong                       0x04
+ *
+ * */
 
 class MagneticEncoder{
 public:
-    MagneticEncoder(uint8_t encoderAddress, uint8_t channelNumber, I2C_HandleTypeDef* i2c, float homingPosition, float degPerRotation);
+    MagneticEncoder(uint8_t encoderNumber, uint8_t encoderAddress, uint8_t channelNumber, I2C_HandleTypeDef* i2c, float homingPosition, float degPerRotation);
+
+    operation_status checkEncoder();
 
     /** @brief Checks if the raw position of the encoder is at homing position with given tolerance
      *  @attention Be mindful that the minimum tolerance (in degrees) must be at least equal to the value of one step
@@ -79,6 +98,7 @@ private:
 
     float homingPosition;
 
+    uint8_t encoderNumber;
     uint8_t channelNumber;
     uint8_t encoderAddress;
     I2C_HandleTypeDef* i2c;

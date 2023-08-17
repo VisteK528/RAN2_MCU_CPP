@@ -36,13 +36,19 @@ static uint16_t as5600_read_from_double_register(I2C_HandleTypeDef* i2c, uint8_t
     return data;
 }
 
-uint8_t as5600_init(I2C_HandleTypeDef* i2c, uint8_t ADDRESS){
-    // 1. Check if the sensor is available at given address by reading one empty byte from the sensor
-
-    uint8_t rxdata;
+uint8_t as5600_check_presence(I2C_HandleTypeDef* i2c, uint8_t ADDRESS){
     HAL_StatusTypeDef device_status = HAL_I2C_IsDeviceReady(i2c, ADDRESS<<1, 5, HAL_MAX_DELAY);
 
     if(device_status != HAL_OK){
+        return 1;
+    }
+    return 0;
+}
+
+uint8_t as5600_init(I2C_HandleTypeDef* i2c, uint8_t ADDRESS){
+    // 1. Check if the sensor is available at given address by reading one empty byte from the sensor
+
+    if(as5600_check_presence(i2c, ADDRESS) == 1){
         return 1;
     }
 
@@ -54,11 +60,11 @@ uint8_t as5600_init(I2C_HandleTypeDef* i2c, uint8_t ADDRESS){
     }
     else if(status == 1){
         printf("Magnet too weak! Aborting...\n");
-        return 1;
+        return 2;
     }
     else if(status == 2){
         printf("Magnet too strong! Aborting...\n");
-        return 2;
+        return 3;
     }
 
 

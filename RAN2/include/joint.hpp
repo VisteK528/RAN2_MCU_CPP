@@ -9,10 +9,24 @@
 #include "gpio.h"
 #include "magnetic_encoder.hpp"
 
-typedef enum{
-    operational,
-    homing_device_error
-} JOINT_STATUS;
+/*  Operation_status information
+ *
+ *  Module codes used in this module:
+ *  - Joints (Numbers from 1 to 6)    0x09 - 0x0e
+ *
+ *  Operation result codes:
+ *  Result                                                                              Code
+ *  Operation ended successfully                                                        0x00
+ *  Operation continue                                                                  0x01
+ *
+ *  Encoder present, but degPerRotation is not equal to 1                               0x02
+ *  Endstop and encoder not present, homing impossible                                  0x03
+ *  Endstop not present, homing by endstop impossible                                   0x04
+ *  Encoder not present, homing by encoder impossible                                   0x05
+ *
+ *  Movement not possible, joint is not homed                                           0x06
+ *
+ ** */
 
 using namespace drivers;
 
@@ -31,15 +45,16 @@ public:
     void setOffset(float offset);
     void setBaseAngle(float base_angle);
 
-    void disableMotor();
-    void enableMotor();
-    bool isEnabled();
+    operation_status disableMotor();
+    operation_status enableMotor();
+    bool isMotorEnabled();
 
-    void move2Pos(float position, bool blocking);
-    void homeJoint();
-    bool setEncoderHoming();
-    bool setEndstopHoming();
-    JOINT_STATUS getJointStatus();
+    operation_status move2Pos(float position, bool blocking);
+    operation_status homeJoint();
+    operation_status setEncoderHoming();
+    operation_status setEndstopHoming();
+
+    operation_status getJointStatus();
 
     float getEncoderPosition();
 
@@ -77,7 +92,8 @@ private:
     bool homed = false;
     bool endstop_homing = true;
     bool encoder_homing = false;
-    JOINT_STATUS status;
+
+    operation_status current_joint_status;
 };
 
 #endif // RAN2_MCU_CPP_DRIVER_HPP
