@@ -70,6 +70,9 @@ public:
     operation_status setAngleUnits(ANGLE_UNITS units);
     ANGLE_UNITS getAngleUnits();
 
+    execution_status updateEncoders();
+    execution_status getEncoderData(uint8_t joint_number, MagneticEncoderData* data);
+
 private:
     // Kinematics algorithms related variables
     std::unique_ptr<Algorithm6Dof> k_algorithms;

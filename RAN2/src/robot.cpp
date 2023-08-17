@@ -189,6 +189,20 @@ ANGLE_UNITS Robot::getAngleUnits() {
     return angleUnits;
 }
 
+execution_status Robot::updateEncoders() {
+    for(uint8_t i = 0; i < 6; i++){
+        this->joints[i]->updateEncoder();
+    }
+    return success;
+}
+
+execution_status Robot::getEncoderData(uint8_t joint_number, MagneticEncoderData *data) {
+    if(this->joints[joint_number-1]->getEncoderData(data)){
+        return success;
+    }
+    return failure;
+}
+
 Robot buildRobot(){
     // Waist
     GPIO_PIN waist_step, waist_dir, waist_en, waist_endstop_pin;

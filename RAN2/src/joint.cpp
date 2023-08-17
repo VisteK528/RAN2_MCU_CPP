@@ -313,3 +313,20 @@ operation_status Joint::disableMotor() {
 bool Joint::isMotorEnabled() {
     return this->driver->isEnabled();
 }
+
+void Joint::updateEncoder() {
+    if(this->encoder != nullptr){
+        this->encoder->updateParameters();
+    }
+}
+
+bool Joint::getEncoderData(MagneticEncoderData *data) {
+    if(encoder != nullptr){
+        data->position = encoder->getPosition();
+        data->velocity = encoder->getVelocity();
+        data->acceleration = encoder->getAcceleration();
+        return true;
+    }
+    return false;
+}
+
