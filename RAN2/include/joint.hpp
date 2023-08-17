@@ -25,6 +25,7 @@
  *  Encoder not present, homing by encoder impossible                                   0x05
  *
  *  Movement not possible, joint is not homed                                           0x06
+ *  Homing not possible, joint motor is disabled                                        0x07
  *
  ** */
 

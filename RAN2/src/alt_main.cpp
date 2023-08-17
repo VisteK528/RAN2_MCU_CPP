@@ -1,13 +1,8 @@
 #include "../include/alt_main.hpp"
 #include "../include/robot.hpp"
-#include "hagl.h"
-#include "font6x9.h"
-#include "font5x7.h"
-#include "font10x20_ISO8859_1.h"
-//#include "../../tft_lcd/fonts/font7x13B-ISO8859-1.h"
-#include "rgb565.h"
 #include <cstring>
 #include "../Inc/spi.h"
+#include "../include/display.hpp"
 
 #define LINE_MAX_LENGTH	80
 
@@ -75,13 +70,8 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim){
 }
 
 int alt_main(){
-    hagl_backend_t* display = hagl_init();
-
-    hagl_clear(display);
-    hagl_put_text(display, L"RAN3 Soft©", 0, 0, rgb565(255, 255, 255), font10x20_ISO8859_1);
-    hagl_put_text(display, L"Command: ", 0, 50, rgb565(255, 255, 255), font6x9);
-    hagl_put_text(display, L"Status: ", 0, 60, rgb565(255, 255, 255), font6x9);
-    hagl_flush(display);
+    Display display;
+    display.init();
 
     printf("RAN2 Software MCU©\n");
     printf("Starting...\n");
@@ -97,32 +87,25 @@ int alt_main(){
         uint8_t uart_value;
         if (HAL_UART_Receive(&huart2, &uart_value, 1, 0) == HAL_OK){
             if(line_append(uart_value) == 0){
+                status.result = in_progress;
+                display.printStatus(status);
+
                 status = executeGCODE(my_robot, line_buffer);
                 memset(line_buffer, 0, 80);
                 if(status.result ==  success){
                     printf("Command executed successfully\n");
-
-                    hagl_fill_rectangle_xywh(display, 6*9, 60, 160-10+6*9, 9, rgb565(0, 0, 0));
-                    hagl_put_text(display, L"Succeeded", 6*8, 60, rgb565(255, 255, 255), font6x9);
-                    hagl_flush(display);
                 }
                 else{
                     printf("Command execution failed\n");
-
-                    hagl_fill_rectangle_xywh(display, 6*9, 60, 160-10+6*9, 9, rgb565(0, 0, 0));
-                    hagl_put_text(display, L"Failed", 6*8, 60, rgb565(255, 255, 255), font6x9);
-                    hagl_flush(display);
                 }
+                display.printStatus(status);
 
             }
             else if(uart_value != '\0' && line_length >= 0){
                 printf("Command: %s\n", line_buffer);
 
-                hagl_fill_rectangle_xywh(display, 6*9, 50, 160-10+6*9, 9, rgb565(0, 0, 0));
-
                 convertCharArrayToWChar(line_buffer, line_buffer_display, LINE_MAX_LENGTH + 1);
-                hagl_put_text(display, line_buffer_display, 6*9, 50, rgb565(255, 255, 255), font6x9);
-                hagl_flush(display);
+                display.printCommand(line_buffer_display);
             }
 
             fflush(stdin);

@@ -204,6 +204,10 @@ operation_status Joint::homeJoint() {
         second_direction = ANTICLOCKWISE;
     }
 
+    if(!driver->isEnabled()){
+        return operation_status_init_joint(joint_number, failure, 0x07);
+    }
+
     if (endstop_homing) {
         while (true) {
             accelerateJoint(first_direction, homing_velocity, homing_acceleration);

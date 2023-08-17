@@ -320,7 +320,7 @@ Robot buildRobot(){
     wrist_roll_en.gpio_port = J6_EN_GPIO_Port;
     wrist_roll_en.gpio_pin = J6_EN_Pin;
 
-    std::shared_ptr<MagneticEncoder> wrist_roll_encoder = std::make_shared<MagneticEncoder>(6, 0x36, 2, &hi2c1, 310.f, 1.f);
+    std::shared_ptr<MagneticEncoder> wrist_roll_encoder = std::make_shared<MagneticEncoder>(5, 0x36, 2, &hi2c1, 310.f, 1.f);
 
     std::unique_ptr<Driver> wrist_roll_driver = std::make_unique<drivers::Driver>(5, wrist_roll_step, wrist_roll_dir, wrist_roll_en, 1, 1.8f, 8);
 

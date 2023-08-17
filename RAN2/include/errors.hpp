@@ -28,6 +28,7 @@ typedef enum{
 
 typedef enum{
     success,
+    in_progress,
     failure
 } operation_result;
 
