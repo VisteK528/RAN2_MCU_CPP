@@ -10,7 +10,6 @@
 static char line_buffer[LINE_MAX_LENGTH + 1];
 static wchar_t line_buffer_display[LINE_MAX_LENGTH + 1];
 static uint32_t line_length;
-bool start = false;
 
 operation_status robot_operation_status;
 operation_status background_robot_operation_status;
@@ -82,12 +81,12 @@ int alt_main(){
     printf("Starting...\n");
 
     my_robot = buildRobot();
+    my_robot.systemsCheck();
 
     printf("Status ready!\n");
     printf("Command: \n");
 
     MagneticEncoderData data;
-    start = true;
     while (1)
     {
         //Test
@@ -131,7 +130,7 @@ int alt_main(){
 
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim){
     if(htim == &htim1){
-        if(start){
+        if(my_robot.systemsCheck().result == success){
             background_robot_operation_status = my_robot.updateEncoders();
             if(background_robot_operation_status.result == failure){
                 to_be_displayed++;

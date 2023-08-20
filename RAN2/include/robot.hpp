@@ -21,6 +21,8 @@
  *  Operation ended successfully                                                        0x00
  *  Operation continue                                                                  0x01
  *
+ *  Systems check not done                                                              0x02
+ *
  ** */
 
 /*  Operation_status information (GCODE Reader)
@@ -73,6 +75,9 @@ public:
     operation_status updateEncoders();
     operation_status getEncoderData(uint8_t joint_number, MagneticEncoderData* data);
 
+    operation_status systemsCheck();
+    operation_status getSystemsStatus();
+
 private:
     // Kinematics algorithms related variables
     std::unique_ptr<Algorithm6Dof> k_algorithms;
@@ -104,6 +109,7 @@ private:
     // Movement & Joint variables
     std::unordered_map<int, std::unique_ptr<Joint>> joints;
     bool homed = false;
+    operation_status systems_status;
 };
 
 Robot buildRobot();

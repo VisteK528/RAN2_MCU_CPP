@@ -24,6 +24,9 @@ Robot::Robot(std::vector<std::unique_ptr<Joint>>& joints) {
 
     // Initialize Kinematics Algorithm
     this->k_algorithms = std::make_unique<Algorithm6Dof>(map, joint_offsets);
+
+    // Ensure that the systems check if done before any action
+    systems_status = operation_status_init_robot(failure, 0x02);
 }
 
 operation_status Robot::home(){
@@ -213,6 +216,20 @@ operation_status Robot::getEncoderData(uint8_t joint_number, MagneticEncoderData
     return operation_status_init_robot(success, 0x00);
 }
 
+operation_status Robot::systemsCheck() {
+    // Check status of each joint
+    for(uint8_t i = 0; i < 6; i++){
+        systems_status = this->joints[i]->getJointStatus();
+
+        if(systems_status.result == failure){
+            return systems_status;
+        }
+    }
+
+    systems_status = operation_status_init_robot(success, 0x00);
+    return systems_status;
+}
+
 Robot buildRobot(){
     // Waist
     GPIO_PIN waist_step, waist_dir, waist_en, waist_endstop_pin;
@@ -232,7 +249,7 @@ Robot buildRobot(){
     std::unique_ptr<Joint> waist_joint = std::make_unique<Joint>(0, waist_driver, 125,
                                                                  drivers::DIRECTION::ANTICLOCKWISE, waist_endstop);
     waist_joint->setMinPosition(-1);
-    waist_joint->setMaxPosition(358);
+    waist_joint->setMaxPosition(350);
 
     waist_joint->setMaxVelocity(1.6);
     waist_joint->setMaxAcceleration(3);
@@ -296,7 +313,9 @@ Robot buildRobot(){
 
     elbow_roll_endstop_pin.gpio_port = J4_ENDSTOP_GPIO_Port;
     elbow_roll_endstop_pin.gpio_pin = J4_ENDSTOP_Pin;
-    
+
+    std::shared_ptr<MagneticEncoder> elbow_roll_encoder = std::make_shared<MagneticEncoder>(3, 0x36, 3, &hi2c1, 125.59f, 1.f);
+
     std::unique_ptr<Driver> elbow_roll_driver = std::make_unique<drivers::Driver>(3, elbow_roll_step, elbow_roll_dir, elbow_roll_en, 1, 1.8f, 8);
     std::shared_ptr<Endstop> elbow_roll_endstop = std::make_shared<Endstop>(elbow_roll_endstop_pin, ENDSTOP_TYPE::UP);
 
@@ -307,7 +326,8 @@ Robot buildRobot(){
     //elbow_roll_joint->setHomingVelocity(0.5);
     elbow_roll_joint->setHomingSteps(100);
 
-    elbow_roll_joint->setMaxPosition(350);
+    elbow_roll_joint->setMinPosition(-180);
+    elbow_roll_joint->setMaxPosition(180);
     elbow_roll_joint->setOffset(-18);
     elbow_roll_joint->setMaxAcceleration(2);
     elbow_roll_joint->setMaxVelocity(1.5);
@@ -344,13 +364,13 @@ Robot buildRobot(){
     wrist_roll_en.gpio_port = J6_EN_GPIO_Port;
     wrist_roll_en.gpio_pin = J6_EN_Pin;
 
-    std::shared_ptr<MagneticEncoder> wrist_roll_encoder = std::make_shared<MagneticEncoder>(5, 0x36, 2, &hi2c1, 310.f, 1.f);
+    std::shared_ptr<MagneticEncoder> wrist_roll_encoder = std::make_shared<MagneticEncoder>(5, 0x36, 2, &hi2c1, 28.f, 1.f);
 
     std::unique_ptr<Driver> wrist_roll_driver = std::make_unique<drivers::Driver>(5, wrist_roll_step, wrist_roll_dir, wrist_roll_en, 1, 1.8f, 8);
 
 
     std::unique_ptr<Joint> wrist_roll_joint = std::make_unique<Joint>(5, wrist_roll_driver, 1,
-                                                                       drivers::DIRECTION::ANTICLOCKWISE, nullptr, wrist_roll_encoder);
+                                                                       drivers::DIRECTION::CLOCKWISE, nullptr, wrist_roll_encoder);
 
     wrist_roll_joint->setMaxAcceleration(4);
     wrist_roll_joint->setMaxVelocity(3);

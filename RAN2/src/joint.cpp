@@ -44,27 +44,39 @@ Joint::Joint(uint8_t joint_number, std::unique_ptr<drivers::Driver>& driver,
         setEndstopHoming();
         endstop_homing = true;
         encoder_homing = false;
-        current_joint_status = operation_status_init_joint(joint_number, success, 0x00);
+        joint_status = operation_status_init_joint(joint_number, success, 0x00);
     }
     else if(sensor == nullptr && encoder != nullptr){
         if(encoder->getDegPerRotation() == 1.f){
             endstop_homing = false;
             encoder_homing = true;
-            current_joint_status = operation_status_init_joint(joint_number, success, 0x00);
+            joint_status = operation_status_init_joint(joint_number, success, 0x00);
         }
         else{
-            current_joint_status = operation_status_init_joint(joint_number, failure, 0x02);
+            joint_status = operation_status_init_joint(joint_number, failure, 0x02);
         }
     }
     else{
-        current_joint_status = operation_status_init_joint(joint_number, failure, 0x03);
+        joint_status = operation_status_init_joint(joint_number, failure, 0x03);
     }
     this->endstop = sensor;
     this->encoder = encoder;
 }
 
+operation_status Joint::checkJointStatus() {
+    if(encoder != nullptr){
+        joint_status = encoder->checkEncoder();
+
+        if(joint_status.result == failure){
+            return joint_status;
+        }
+    }
+    joint_status = operation_status_init_joint(joint_number, success, 0x00);
+    return joint_status;
+}
+
 operation_status Joint::getJointStatus() {
-    return this->current_joint_status;
+    return this->joint_status;
 }
 
 uint8_t Joint::getJointNumber() const {
@@ -323,9 +335,7 @@ operation_status Joint::updateEncoder() {
             return status;
         }
     }
-    else{
-        return operation_status_init_joint(joint_number, failure, 0x05);
-    }
+    return operation_status_init_joint(joint_number, failure, 0x05);
 }
 
 operation_status Joint::getEncoderData(MagneticEncoderData *data) {

@@ -52,13 +52,15 @@ public:
 
     operation_status move2Pos(float position, bool blocking);
     operation_status homeJoint();
-    operation_status getJointStatus();
 
     bool encoderAvailable();
     operation_status setEncoderHoming();
     operation_status setEndstopHoming();
     operation_status updateEncoder();
     operation_status getEncoderData(MagneticEncoderData* data);
+
+    operation_status checkJointStatus();
+    operation_status getJointStatus();
 
 private:
     unsigned int degrees2Steps(float degrees);
@@ -95,7 +97,7 @@ private:
     bool endstop_homing = true;
     bool encoder_homing = false;
 
-    operation_status current_joint_status;
+    operation_status joint_status;
 };
 
 #endif // RAN2_MCU_CPP_DRIVER_HPP
