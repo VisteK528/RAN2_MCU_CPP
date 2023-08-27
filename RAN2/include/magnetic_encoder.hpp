@@ -53,6 +53,7 @@ public:
      * */
     float getPosition();
 
+    float getRawPosition();
     /** @brief Returns total angle of movement of the encoder, may be negative.
      * */
     float getTotalAngle();

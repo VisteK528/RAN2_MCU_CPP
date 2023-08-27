@@ -76,9 +76,9 @@ operation_status Robot::moveJoints(float* angles) {
     for(int i = 0; i < 6; i++){
         status = moveJoint(i, angles[i], false);
 
-        if(status.result == failure){
+        /*if(status.result == failure){
             return status;
-        }
+        }*/
     }
     return operation_status_init_robot(success, 0x00);
 }
@@ -119,16 +119,14 @@ operation_status Robot::move2Coordinates(float x, float y, float z, float yaw, f
 
     joint_angles[1] = 180.f - joint_angles[1];
     joint_angles[2] = joint_angles[2] - 50.3f;
-    //joint_angles[3] = -joint_angles[3];
-    if(joint_angles[3] < 0){
-        joint_angles[3] += 360;
+
+    joint_angles[3] = round(joint_angles[3]*1000)/1000;
+
+    if(joint_angles[3] > 360){
+        joint_angles[3] -= 360;
     }
 
     joint_angles[4] += 112;
-
-    if(joint_angles[5] < 0){
-        joint_angles[5] += 360;
-    }
 
     for(int i = 0; i < 6; i++) {
         printf("Theta%d: %f\n", i, joint_angles[i]);
@@ -314,21 +312,22 @@ Robot buildRobot(){
     elbow_roll_endstop_pin.gpio_port = J4_ENDSTOP_GPIO_Port;
     elbow_roll_endstop_pin.gpio_pin = J4_ENDSTOP_Pin;
 
-    std::shared_ptr<MagneticEncoder> elbow_roll_encoder = std::make_shared<MagneticEncoder>(3, 0x36, 3, &hi2c1, 125.59f, 1.f);
+    std::shared_ptr<MagneticEncoder> elbow_roll_encoder = std::make_shared<MagneticEncoder>(3, 0x36, 3, &hi2c1, 120.f, 1.f);
 
     std::unique_ptr<Driver> elbow_roll_driver = std::make_unique<drivers::Driver>(3, elbow_roll_step, elbow_roll_dir, elbow_roll_en, 1, 1.8f, 8);
     std::shared_ptr<Endstop> elbow_roll_endstop = std::make_shared<Endstop>(elbow_roll_endstop_pin, ENDSTOP_TYPE::UP);
 
     std::unique_ptr<Joint> elbow_roll_joint = std::make_unique<Joint>(3, elbow_roll_driver,
-                                                                      1, drivers::DIRECTION::ANTICLOCKWISE, elbow_roll_endstop);
+                                                                      1, drivers::DIRECTION::ANTICLOCKWISE, elbow_roll_endstop, elbow_roll_encoder);
 
     //elbow_roll_joint->setHomingAcceleration(0.25);
     //elbow_roll_joint->setHomingVelocity(0.5);
+    elbow_roll_joint->setEncoderHoming();
     elbow_roll_joint->setHomingSteps(100);
 
-    elbow_roll_joint->setMinPosition(-180);
-    elbow_roll_joint->setMaxPosition(180);
-    elbow_roll_joint->setOffset(-18);
+    elbow_roll_joint->setMinPosition(0);
+    elbow_roll_joint->setMaxPosition(360);
+   // elbow_roll_joint->setOffset(-18);
     elbow_roll_joint->setMaxAcceleration(2);
     elbow_roll_joint->setMaxVelocity(1.5);
 
@@ -372,6 +371,8 @@ Robot buildRobot(){
     std::unique_ptr<Joint> wrist_roll_joint = std::make_unique<Joint>(5, wrist_roll_driver, 1,
                                                                        drivers::DIRECTION::CLOCKWISE, nullptr, wrist_roll_encoder);
 
+    wrist_roll_joint->setMaxPosition(181);
+    wrist_roll_joint->setMinPosition(-181);
     wrist_roll_joint->setMaxAcceleration(4);
     wrist_roll_joint->setMaxVelocity(3);
     wrist_roll_joint->setHomingVelocity(0.5);

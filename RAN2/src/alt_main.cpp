@@ -10,6 +10,7 @@
 static char line_buffer[LINE_MAX_LENGTH + 1];
 static wchar_t line_buffer_display[LINE_MAX_LENGTH + 1];
 static uint32_t line_length;
+bool start = false;
 
 operation_status robot_operation_status;
 operation_status background_robot_operation_status;
@@ -53,7 +54,7 @@ uint8_t line_append(uint8_t value)
             line_length = 0;
         }
         // dopisujemy wartość do bufora
-        if((uint8_t)value == 8 && line_length > 0){
+        if(((uint8_t)value == 8  || (uint8_t)value == 127 ) && line_length > 0){
             line_buffer[--line_length] = 0;
         }
         else{
@@ -71,7 +72,7 @@ void HAL_SPI_TxCpltCallback(SPI_HandleTypeDef *hspi)
     }
 }
 
-int alt_main(){
+int alt_main() {
     HAL_TIM_Base_Start_IT(&htim1);
 
     Display display;
@@ -87,30 +88,29 @@ int alt_main(){
     printf("Command: \n");
 
     MagneticEncoderData data;
-    while (1)
-    {
+    start = true;
+
+    while (1) {
         //Test
         //my_robot.getEncoderData(6, &data);
         //printf("Position: %f\tVelocity: %f\tAcceleration: %f\n", data.position, data.velocity, data.acceleration);
 
         uint8_t uart_value;
-        if (HAL_UART_Receive(&huart2, &uart_value, 1, 0) == HAL_OK){
-            if(line_append(uart_value) == 0){
+        if (HAL_UART_Receive(&huart2, &uart_value, 1, 0) == HAL_OK) {
+            if (line_append(uart_value) == 0) {
                 robot_operation_status.result = in_progress;
                 display.printStatus(robot_operation_status);
 
                 robot_operation_status = executeGCODE(my_robot, line_buffer);
                 memset(line_buffer, 0, 80);
-                if(robot_operation_status.result ==  success){
+                if (robot_operation_status.result == success) {
                     printf("Command executed successfully\n");
-                }
-                else{
+                } else {
                     printf("Command execution failed\n");
                 }
                 display.printStatus(robot_operation_status);
 
-            }
-            else if(uart_value != '\0' && line_length >= 0){
+            } else if (uart_value != '\0' && line_length >= 0) {
                 printf("Command: %s\n", line_buffer);
 
                 convertCharArrayToWChar(line_buffer, line_buffer_display, LINE_MAX_LENGTH + 1);
@@ -121,15 +121,16 @@ int alt_main(){
             fflush(stdout);
         }
 
-        if(to_be_displayed > 0){
+        if (to_be_displayed > 0) {
             display.printStatus(background_robot_operation_status);
             to_be_displayed--;
         }
+
     }
 }
 
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim){
-    if(htim == &htim1){
+    if(htim == &htim1 && start){
         if(my_robot.systemsCheck().result == success){
             background_robot_operation_status = my_robot.updateEncoders();
             if(background_robot_operation_status.result == failure){

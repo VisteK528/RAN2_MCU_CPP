@@ -50,6 +50,9 @@ MagneticEncoder::MagneticEncoder(uint8_t encoderNumber, uint8_t encoderAddress, 
 
 operation_status MagneticEncoder::checkEncoder() {
     uint8_t status;
+
+    selectI2CChannels(channelNumber);
+
     status = as5600_init(i2c, encoderAddress);
 
     if(status == 1){
@@ -112,12 +115,13 @@ bool MagneticEncoder::isHomed() {
 }
 
 operation_status MagneticEncoder::updatePosition() {
+    selectI2CChannels(channelNumber);
+
     if(as5600_check_presence(i2c, encoderAddress) == 1){
         return operation_status_init_encoder(encoderNumber, failure, 0x02);
     }
 
    if(homed){
-       selectI2CChannels(channelNumber);
        rawAngle = as5600_read_raw_angle(i2c, encoderAddress);
 
        oldPosition = currentPosition;
@@ -134,6 +138,10 @@ operation_status MagneticEncoder::updatePosition() {
 
 float MagneticEncoder::getPosition() {
     return this->currentPosition;
+}
+
+float MagneticEncoder::getRawPosition() {
+    return this->rawAngle;
 }
 
 float MagneticEncoder::getTotalAngle() {
@@ -163,7 +171,7 @@ float MagneticEncoder::getDegPerRotation() {
 
 operation_status MagneticEncoder::updateParameters() {
     float delta_angle;
-    float elapsedTime = 50.f/1000;           //Measurement approximately every 50ms
+    float elapsedTime = 100.f/1000;           //Measurement approximately every 100ms
     operation_status status;
     status = updatePosition();
 

@@ -59,6 +59,7 @@ Joint::Joint(uint8_t joint_number, std::unique_ptr<drivers::Driver>& driver,
     else{
         joint_status = operation_status_init_joint(joint_number, failure, 0x03);
     }
+
     this->endstop = sensor;
     this->encoder = encoder;
 }
@@ -148,7 +149,7 @@ void Joint::moveJointBySteps(unsigned int steps, drivers::DIRECTION direction, f
 
 operation_status Joint::move2Pos(float position, bool blocking) {
     if(homed){
-        if(min_pos < position && position < max_pos){
+        if(min_pos <= position && position <= max_pos){
             float new_position = joint_position - position;
 
             DIRECTION move_direction;
@@ -273,6 +274,16 @@ operation_status Joint::homeJoint() {
             return encoder_status;
         }
 
+        encoder->updatePosition();
+        float position = encoder->getRawPosition();
+        float homing_position = encoder->getHomingPosition();
+
+        if (position - homing_position < 0) {
+            first_direction = ANTICLOCKWISE;
+        } else {
+            first_direction = CLOCKWISE;
+        }
+
         while (true) {
             accelerateJoint(first_direction, homing_velocity, homing_acceleration);
             while (driver->getMovement(joint_number) && !encoder->homeEncoder());
@@ -334,6 +345,7 @@ operation_status Joint::updateEncoder() {
         if(status.result == failure){
             return status;
         }
+        return operation_status_init_joint(joint_number, success, 0x00);
     }
     return operation_status_init_joint(joint_number, failure, 0x05);
 }

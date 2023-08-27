@@ -7,8 +7,8 @@ Algorithm6Dof::Algorithm6Dof(LINK_MAP link_map, float *offsets) {
 
 void Algorithm6Dof::createRotationMatrix(float yaw, float pitch, float roll, matrix_f32* rot_mat) {
     float yaw_matrix_d[9] = {
-             cos(yaw), -sin(yaw), 0,
-             sin(yaw),  cos(yaw), 0,
+             cos(yaw), sin(yaw), 0,
+             -sin(yaw),  cos(yaw), 0,
                     0,         0, 1,
     };
 
@@ -20,8 +20,8 @@ void Algorithm6Dof::createRotationMatrix(float yaw, float pitch, float roll, mat
 
     float roll_matrix_d[9] = {
             1,         0,          0,
-            0, cos(roll), -sin(roll),
-            0, sin(roll),  cos(roll),
+            0, cos(roll), sin(roll),
+            0, -sin(roll),  cos(roll),
     };
 
     float buffer_matrix_d[9] = {};
@@ -159,10 +159,12 @@ void Algorithm6Dof::inverseKinematics(float x, float y, float z, matrix_f32* rot
     wcp.x = tcp.x - linkMap[EE_LENGTH] * rot_mat->p_data[2];
     wcp.y = tcp.y - linkMap[EE_LENGTH] * rot_mat->p_data[5];
     wcp.z = tcp.z - linkMap[EE_LENGTH] * rot_mat->p_data[8];
+    wcp.y *= -1;
+
     arm_position_points[4] = wcp;
 
     // Calculate the angle for J1 (Waist)
-    theta[0] = atan2(wcp.y, wcp.x);
+    theta[0] = atan2(-wcp.y, wcp.x);
 
     // Calculate the angle for J2 (Shoulder)
     // Long hypotenuse is the guiding radius on the XY Plane
@@ -237,21 +239,9 @@ void Algorithm6Dof::inverseKinematics(float x, float y, float z, matrix_f32* rot
     matrix_mul_f32(&inv_rot_0_3, rot_mat, &rot_3_6);
 
     theta[4] = acos((rot_3_6.p_data)[8]);
-    theta[3] = asin(rot_3_6.p_data[5] / sin(theta[4]));
+    theta[3] = M_PI + atan2(rot_3_6.p_data[5], -rot_3_6.p_data[2]);
 
-    if(rot_3_6.p_data[1] / (sin(theta[4])) > -1 && rot_3_6.p_data[1] / (sin(theta[4])) < 1){
-        theta[5] =  asin(rot_3_6.p_data[1] / (sin(theta[4])));
-    }
-    else{
-        theta[5] = 0;
-    }
-
-    if(rotation_angles[1] <= M_PI/2){
-        theta[3] = -theta[3];
-    }
-    else if(rotation_angles[1] > M_PI/2){
-        theta[3] = theta[3] - (float)M_PI;
-    }
+    theta[5] =  atan2(rot_3_6.p_data[7], rot_3_6.p_data[6]);
 
     for(int i = 0; i < 6; i++){
         angles[i] = theta[i];
