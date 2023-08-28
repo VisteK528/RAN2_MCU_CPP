@@ -107,7 +107,7 @@ operation_status Robot::move2Coordinates(float x, float y, float z, float yaw, f
         printf("%f %f %f\n", rot_mat_d[3*i], rot_mat_d[3*i+1], rot_mat_d[3*i+2]);
     }
 
-    k_algorithms->inverseKinematics(x, y, z, &rotation_matrix, joint_angles, rotation_angles);
+    k_algorithms->inverseKinematics(x, y, z, &rotation_matrix, joint_angles);
 
     convertAllToDeg(joint_angles, 6);
 
