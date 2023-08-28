@@ -30,9 +30,8 @@ public:
     Algorithm6Dof(LINK_MAP link_map, float* offsets);
 
     void createRotationMatrix(float yaw, float pitch, float roll, matrix_f32* rot_mat);
-    void forwardKinematics(float* angles, coordinates* arm_position_points);
-    void inverseKinematics(float x, float y, float z, matrix_f32* rot_mat,
-                           float* angles, float* rotation_angles);
+    void forwardKinematics(float* angles, coordinates* position_points);
+    void inverseKinematics(float x, float y, float z, matrix_f32* rot_mat, float* angles);
 private:
     LINK_MAP linkMap;
     float* offsets;

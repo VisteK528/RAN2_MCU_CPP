@@ -39,8 +39,7 @@ void Algorithm6Dof::createRotationMatrix(float yaw, float pitch, float roll, mat
 }
 
 
-void Algorithm6Dof::inverseKinematics(float x, float y, float z, matrix_f32* rot_mat,
-                                      float* angles, float* rotation_angles) {
+void Algorithm6Dof::inverseKinematics(float x, float y, float z, matrix_f32* rot_mat, float* angles) {
 
     // New version V3.0
     float theta[6];
@@ -148,50 +147,55 @@ void Algorithm6Dof::inverseKinematics(float x, float y, float z, matrix_f32* rot
     }
 }
 
-void Algorithm6Dof::forwardKinematics(float *angles, coordinates *arm_position_points) {
+void Algorithm6Dof::forwardKinematics(float *angles, coordinates *position_points) {
 
     float short_hyp, hyp, long_hyp;
     float alfa, beta;
 
-    // Origin
-    arm_position_points[0].x = 0;
-    arm_position_points[0].y = 0;
-    arm_position_points[0].z = 0;
+    // World origin
+    this->arm_position_points[0].x = 0;
+    this->arm_position_points[0].y = 0;
+    this->arm_position_points[0].z = 0;
 
     // Base point (J1 revolute point)
-    arm_position_points[1].x = 0;
-    arm_position_points[1].y = 0;
-    arm_position_points[1].z = linkMap[BASE_HEIGHT];
+    this->arm_position_points[1].x = 0;
+    this->arm_position_points[1].y = 0;
+    this->arm_position_points[1].z = BASE_HEIGHT;
 
     // Shoulder point (J2 revolute point)
-    arm_position_points[2].x = 0;
-    arm_position_points[2].y = 0;
-    arm_position_points[2].z = linkMap[BASE_HEIGHT] + linkMap[SHOULDER_HEIGHT];
+    this->arm_position_points[2].x  = 0;
+    this->arm_position_points[2].y  = 0;
+    this->arm_position_points[2].z  = BASE_HEIGHT + SHOULDER_HEIGHT;
 
     // Elbow point (J3 revolute point)
-    short_hyp = cos(angles[1]) * linkMap[SHOULDER_LENGTH];
-
-    arm_position_points[3].x = linkMap[BASE_HEIGHT]+ linkMap[SHOULDER_HEIGHT] + sin(angles[1]) * linkMap[SHOULDER_LENGTH];
-    arm_position_points[3].y = short_hyp * cos(angles[0]);
-    arm_position_points[3].z = short_hyp * sin(angles[0]);
+    short_hyp = cos(angles[1]) * SHOULDER_LENGTH;
+    this->arm_position_points[3].x  = short_hyp * cos(angles[0]);
+    this->arm_position_points[3].y  = short_hyp * sin(angles[0]);
+    this->arm_position_points[3].z  = BASE_HEIGHT + SHOULDER_HEIGHT + sin(angles[1]) * SHOULDER_LENGTH;
 
     // Wrist center point
-    hyp = sqrt(pow(linkMap[SHOULDER_LENGTH], 2) + pow(linkMap[ELBOW_LENGTH], 2) - 2*linkMap[SHOULDER_LENGTH]*linkMap[ELBOW_LENGTH]*cos(angles[2]));
-    alfa = acos((pow(linkMap[ELBOW_LENGTH], 2) - pow(linkMap[SHOULDER_LENGTH], 2) - pow(hyp, 2))/(-2*linkMap[SHOULDER_LENGTH]*hyp));
+    hyp = sqrt(pow(SHOULDER_LENGTH, 2.f) + pow(ELBOW_LENGTH, 2.f) - 2*SHOULDER_LENGTH*ELBOW_LENGTH*cos(angles[2]-(float)M_PI));
+
+    alfa = acos((pow(ELBOW_LENGTH, 2.f) - pow(SHOULDER_LENGTH, 2.f) - pow(hyp, 2.f))/(-2*SHOULDER_LENGTH*hyp));
     beta = angles[1] - alfa;
     long_hyp = hyp*cos(beta);
 
-    arm_position_points[4].x = long_hyp*cos(angles[0]);
-    arm_position_points[4].y = long_hyp*sin(angles[0]);
-    arm_position_points[4].z = sin(beta)*hyp+linkMap[BASE_HEIGHT] + linkMap[SHOULDER_HEIGHT];
+    this->arm_position_points[4].x  = long_hyp*cos(angles[0]);
+    this->arm_position_points[4].y  = long_hyp*sin(angles[0]);
+    this->arm_position_points[4].z  = sin(beta)*hyp + BASE_HEIGHT + SHOULDER_HEIGHT;
 
-    float rot_0_6_d_col[3] = {
-            sin(angles[4])*(sin(angles[0])*sin(angles[3]) - cos(angles[3])*(cos(angles[0])*cos(angles[1])*sin(angles[2]) + cos(angles[0])*cos(angles[2])*sin(angles[1]))) - cos(angles[4])*(cos(angles[0])*sin(angles[1])*sin(angles[2]) - cos(angles[0])*cos(angles[1])*cos(angles[2])),
-            cos(angles[4])*(cos(angles[1])*sin(angles[2]) + cos(angles[2])*sin(angles[1])) + cos(angles[3])*sin(angles[4])*(cos(angles[1])*cos(angles[2]) - sin(angles[1])*sin(angles[2])),
-            sin(angles[4])*(cos(angles[0])*sin(angles[3]) + cos(angles[3])*(cos(angles[1])*sin(angles[0])*sin(angles[2]) + cos(angles[2])*sin(angles[0])*sin(angles[1]))) + cos(angles[4])*(sin(angles[0])*sin(angles[1])*sin(angles[2]) - cos(angles[1])*cos(angles[2])*sin(angles[0]))
+    // TCP
+    float rot_0_6_col[3] = {
+            -cos(angles[4])*(cos(angles[0])*sin(angles[1])*sin(angles[2]-(float)M_PI) - cos(angles[0])*cos(angles[1])*cos(angles[2]-(float)M_PI)) - sin(angles[0])*sin(angles[3])*sin(angles[4]) - cos(angles[3])*sin(angles[4])*(cos(angles[0])*cos(angles[1])*sin(angles[2]-(float)M_PI) + cos(angles[0])*cos(angles[2]-(float)M_PI)*sin(angles[1])),
+            cos(angles[4])*(sin(angles[0])*sin(angles[1])*sin(angles[2]-(float)M_PI) - cos(angles[1])*cos(angles[2]-(float)M_PI)*sin(angles[0])) - cos(angles[0])*sin(angles[3])*sin(angles[4]) + cos(angles[3])*sin(angles[4])*(cos(angles[1])*sin(angles[0])*sin(angles[2]-(float)M_PI) + cos(angles[2]-(float)M_PI)*sin(angles[0])*sin(angles[1])),
+            -cos(angles[4])*(cos(angles[1])*sin(angles[2]-(float)M_PI) + cos(angles[2]-(float)M_PI)*sin(angles[1])) - cos(angles[3])*sin(angles[4])*(cos(angles[1])*cos(angles[2]-(float)M_PI) - sin(angles[1])*sin(angles[2]-(float)M_PI))
     };
+    
+    this->arm_position_points[5].x = arm_position_points[4].x - EE_LENGTH*rot_0_6_col[0];
+    this->arm_position_points[5].y = arm_position_points[4].y + EE_LENGTH*rot_0_6_col[1];
+    this->arm_position_points[5].z = arm_position_points[4].z - EE_LENGTH*rot_0_6_col[2];
 
-    arm_position_points[5].x = arm_position_points[4].x + linkMap[EE_LENGTH]*rot_0_6_d_col[0];
-    arm_position_points[5].y = arm_position_points[4].y + linkMap[EE_LENGTH]*rot_0_6_d_col[1];
-    arm_position_points[5].z = arm_position_points[4].z + linkMap[EE_LENGTH]*rot_0_6_d_col[2];
+    for(uint8_t i = 0; i < 6; i++){
+        position_points[i] = this->arm_position_points[i];
+    }
 }
