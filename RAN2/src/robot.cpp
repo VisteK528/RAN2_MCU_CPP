@@ -25,6 +25,14 @@ Robot::Robot(std::vector<std::unique_ptr<Joint>>& joints) {
     // Initialize Kinematics Algorithm
     this->k_algorithms = std::make_unique<Algorithm6Dof>(map, joint_offsets);
 
+    GPIO_PIN gripper_pin, feedback_pin;
+    gripper_pin.gpio_pin = GRIPPER_PWM_Pin;
+    gripper_pin.gpio_port = GRIPPER_PWM_GPIO_Port;
+
+    feedback_pin.gpio_pin = GRIPPER_FEEDBACK_Pin;
+    feedback_pin.gpio_port = GRIPPER_FEEDBACK_GPIO_Port;
+    this->gripper = std::make_unique<Gripper>(gripper_pin, feedback_pin, &hadc1, &htim2);
+
     // Ensure that the systems check if done before any action
     systems_status = operation_status_init_robot(failure, 0x02);
 }
@@ -234,6 +242,22 @@ bool Robot::getMovement() {
         }
     }
     return false;
+}
+
+operation_status Robot::enableGripper() {
+    this->gripper->enableGripper();
+    return operation_status_init_robot(success, 0x00);
+}
+
+operation_status Robot::disableGripper() {
+    this->gripper->disableGripper();
+    return operation_status_init_robot(success, 0x00);
+}
+
+operation_status Robot::setGripperClosedPercentage(float percentage) {
+    enableGripper();
+    this->gripper->setPosition(percentage);
+    return operation_status_init_robot(success, 0x00);
 }
 
 Robot buildRobot(){
@@ -559,6 +583,23 @@ static operation_status executeMGCODE(Robot& robot, uint16_t code, uint8_t parse
             else{
                 return robot.disableJoints();
             }
+        }
+        case 280:
+        {
+            if(parse_result == 1) {
+                parseMessage(&letter, &value, command_str, &counter);
+
+                if (letter == 'P' && value >= 0 && value <= 100) {
+                    status = robot.setGripperClosedPercentage(value);
+                    return status;
+                }
+            }
+            break;
+        }
+        case 282:
+        {
+            status = robot.disableGripper();
+            return status;
         }
         default:
             break;

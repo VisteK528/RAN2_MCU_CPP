@@ -9,7 +9,7 @@
 #include "read_gcode.h"
 #include "utilities.hpp"
 #include "errors.hpp"
-
+#include "gripper.hpp"
 
 /*  Operation_status information (Robot)
  *
@@ -79,9 +79,15 @@ public:
     operation_status getSystemsStatus();
     bool getMovement();
 
+    // Gripper
+    operation_status setGripperClosedPercentage(float percentage);
+    operation_status enableGripper();
+    operation_status disableGripper();
+
 private:
     // Kinematics algorithms related variables
     std::unique_ptr<Algorithm6Dof> k_algorithms;
+    std::unique_ptr<Gripper> gripper;
 
     // Link map - ultimately stored in EEPROM / FLASH memory on the robot board, for now in software
     LINK_MAP map =  {

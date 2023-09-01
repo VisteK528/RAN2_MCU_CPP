@@ -21,7 +21,7 @@ operation_status Gripper::disableGripper() {
 }
 
 operation_status Gripper::setPosition(float position) {
-    position_ms = lroundf(2.4f*position/100.f + 0.5);
+    position_ms = lroundf((1.71f*position/100.f + 0.69f)*1000);
     __HAL_TIM_SET_COMPARE(tim, TIM_CHANNEL_1, position_ms);
     return operation_status_init(gripper, success, 0x00);
 }
