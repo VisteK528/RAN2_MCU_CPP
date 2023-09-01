@@ -79,18 +79,14 @@ int alt_main() {
     display.init();
 
     printf("RAN2 Software MCU©\n");
-    printf("Starting...\n");
 
     my_robot = buildRobot();
     my_robot.systemsCheck();
 
-    printf("Status ready!\n");
-    printf("Command: \n");
-
     start = true;
 
     while (1) {
-        uint8_t uart_value;
+        uint8_t uart_value = 0;
         if (HAL_UART_Receive(&huart2, &uart_value, 1, 0) == HAL_OK) {
             if (line_append(uart_value) == 0) {
                 robot_operation_status.result = in_progress;
@@ -99,14 +95,14 @@ int alt_main() {
                 robot_operation_status = executeGCODE(my_robot, line_buffer);
                 memset(line_buffer, 0, 80);
                 if (robot_operation_status.result == success) {
-                    printf("Command executed successfully\n");
+                    printf("%d\n", 0x00);                       // Success
                 } else {
-                    printf("Command execution failed\n");
+                    printf("%d\n", 0x01);                       // Failure
                 }
                 display.printStatus(robot_operation_status);
 
-            } else if (uart_value != '\0' && line_length >= 0) {
-                printf("Command: %s\n", line_buffer);
+            } else if (uart_value != '\0' && line_length > 0) {
+                printf("Got: %s\n", line_buffer);
 
                 convertCharArrayToWChar(line_buffer, line_buffer_display, LINE_MAX_LENGTH + 1);
                 display.printCommand(line_buffer_display);

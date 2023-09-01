@@ -55,20 +55,14 @@ uint8_t as5600_init(I2C_HandleTypeDef* i2c, uint8_t ADDRESS){
     // Check if the magnet is present by reading the 0x0B STATUS register
     uint8_t status = as5600_get_magnet_status(i2c, ADDRESS);
     if(status == 0){
-        printf("Magnet detected!\n");
         return 0;
     }
     else if(status == 1){
-        printf("Magnet too weak! Aborting...\n");
         return 2;
     }
     else if(status == 2){
-        printf("Magnet too strong! Aborting...\n");
         return 3;
     }
-
-
-    printf("AS5600 sensor initialized successfully!\n");
     return 0;
 }
 

@@ -80,6 +80,7 @@ operation_status Robot::moveJoints(float* angles) {
             return status;
         }*/
     }
+    while(getMovement());
     return operation_status_init_robot(success, 0x00);
 }
 
@@ -103,10 +104,6 @@ operation_status Robot::move2Coordinates(float x, float y, float z, float yaw, f
     matrix_init_f32(&rotation_matrix, 3, 3, rot_mat_d);
 
     k_algorithms->createRotationMatrix(yaw, pitch, roll, &rotation_matrix);
-    for(int i = 0; i < 3; i ++){
-        printf("%f %f %f\n", rot_mat_d[3*i], rot_mat_d[3*i+1], rot_mat_d[3*i+2]);
-    }
-
     k_algorithms->inverseKinematics(x, y, z, &rotation_matrix, joint_angles);
 
     convertAllToDeg(joint_angles, 6);
@@ -130,9 +127,9 @@ operation_status Robot::move2Coordinates(float x, float y, float z, float yaw, f
 
     joint_angles[5] = 180 - joint_angles[5];
 
-    for(int i = 0; i < 6; i++) {
+    /*for(int i = 0; i < 6; i++) {
         printf("Theta%d: %f\n", i, joint_angles[i]);
-    }
+    }*/
 
     return moveJoints(joint_angles);
 }
