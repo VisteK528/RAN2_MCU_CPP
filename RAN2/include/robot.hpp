@@ -77,6 +77,7 @@ public:
 
     operation_status systemsCheck();
     operation_status getSystemsStatus();
+    bool getMovement();
 
 private:
     // Kinematics algorithms related variables

@@ -5,6 +5,7 @@
 #include "../../Core/Inc/tim.h"
 #include "gpio.h"
 #include "errors.hpp"
+#include <cmath>
 
 /*  Operation_status information
  *

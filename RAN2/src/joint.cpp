@@ -206,6 +206,25 @@ operation_status Joint::setEncoderHoming() {
     return operation_status_init_joint(joint_number, failure, 0x05);
 }
 
+operation_status Joint::setSmartEncoderHoming() {
+    if(encoder != nullptr && encoder_homing){
+        smart_encoder_homing = true;
+        return operation_status_init_joint(joint_number, success, 0x00);
+    }
+    return operation_status_init_joint(joint_number, failure, 0x08);
+}
+
+operation_status Joint::disableSmartEncoderHoming() {
+    if(encoder != nullptr && encoder_homing){
+        if(smart_encoder_homing){
+            smart_encoder_homing = false;
+            return operation_status_init_joint(joint_number, success, 0x00);
+        }
+        return operation_status_init_joint(joint_number, failure, 0x09);
+    }
+    return operation_status_init_joint(joint_number, failure, 0x05);
+}
+
 operation_status Joint::homeJoint() {
     DIRECTION first_direction;
     DIRECTION second_direction;
@@ -274,19 +293,24 @@ operation_status Joint::homeJoint() {
             return encoder_status;
         }
 
-        encoder->updatePosition();
-        float position = encoder->getRawPosition();
-        float homing_position = encoder->getHomingPosition();
+        if(smart_encoder_homing)
+        {
+            encoder->updatePosition();
+            float position = encoder->getRawPosition();
+            float homing_position = encoder->getHomingPosition();
 
-        if (position - homing_position < 0) {
-            first_direction = ANTICLOCKWISE;
-        } else {
-            first_direction = CLOCKWISE;
+            if (position - homing_position < 0) {
+                first_direction = ANTICLOCKWISE;
+            } else {
+                first_direction = CLOCKWISE;
+            }
         }
 
         while (true) {
             accelerateJoint(first_direction, homing_velocity, homing_acceleration);
-            while (driver->getMovement(joint_number) && !encoder->homeEncoder());
+            while (driver->getMovement(joint_number) && !encoder->homeEncoder()){
+                HAL_Delay(3);
+            }
             driver->stopMovement(joint_number);
 
 
@@ -294,7 +318,9 @@ operation_status Joint::homeJoint() {
                 break;
             } else {
                 moveJoint(first_direction, homing_velocity);
-                while (driver->getMovement(joint_number) && !encoder->homeEncoder());
+                while (driver->getMovement(joint_number) && !encoder->homeEncoder()){
+                    HAL_Delay(3);
+                }
                 driver->stopMovement(joint_number);
 
                 break;
@@ -328,6 +354,10 @@ operation_status Joint::disableMotor() {
 
 bool Joint::isMotorEnabled() {
     return this->driver->isEnabled();
+}
+
+bool Joint::isMoving() {
+    return this->driver->getMovement(joint_number);
 }
 
 bool Joint::encoderAvailable() {

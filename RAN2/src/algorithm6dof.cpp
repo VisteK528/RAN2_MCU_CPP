@@ -58,7 +58,6 @@ void Algorithm6Dof::inverseKinematics(float x, float y, float z, matrix_f32* rot
     wcp.x = tcp.x - linkMap[EE_LENGTH] * rot_mat->p_data[2];
     wcp.y = tcp.y - linkMap[EE_LENGTH] * rot_mat->p_data[5];
     wcp.z = tcp.z - linkMap[EE_LENGTH] * rot_mat->p_data[8];
-    wcp.y *= -1;
 
     arm_position_points[4] = wcp;
 

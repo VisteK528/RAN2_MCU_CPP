@@ -87,14 +87,9 @@ int alt_main() {
     printf("Status ready!\n");
     printf("Command: \n");
 
-    MagneticEncoderData data;
     start = true;
 
     while (1) {
-        //Test
-        //my_robot.getEncoderData(6, &data);
-        //printf("Position: %f\tVelocity: %f\tAcceleration: %f\n", data.position, data.velocity, data.acceleration);
-
         uint8_t uart_value;
         if (HAL_UART_Receive(&huart2, &uart_value, 1, 0) == HAL_OK) {
             if (line_append(uart_value) == 0) {
@@ -130,7 +125,10 @@ int alt_main() {
 }
 
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim){
-    if(htim == &htim1 && start){
+    if(htim != &htim1){
+        DriverHandleCallback(htim);
+    }
+    else if(start && !my_robot.getMovement()){
         if(my_robot.systemsCheck().result == success){
             background_robot_operation_status = my_robot.updateEncoders();
             if(background_robot_operation_status.result == failure){
@@ -138,7 +136,5 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim){
             }
         }
     }
-    else{
-        DriverHandleCallback(htim);
-    }
+
 }
