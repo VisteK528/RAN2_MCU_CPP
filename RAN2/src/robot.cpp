@@ -6,12 +6,73 @@ static void convertAllToDeg(float* angles_rad, uint8_t number){
     }
 }
 
+static void convertAllToRad(float* angles_rad, uint8_t number){
+    for(int i = 0; i < number; i++){
+        angles_rad[i] = deg2Rad(angles_rad[i]);
+    }
+}
+
 static operation_status operation_status_init_robot(operation_result result, operation_result_code code){
     return operation_status_init(robot, result, code);
 }
 
 static operation_status operation_status_init_gcode_reader(operation_result result, operation_result_code code){
     return operation_status_init(gcode_reader, result, code);
+}
+
+static void add_offsets_to_angles(float* joint_angles){
+    // Theta1
+    if(joint_angles[0] < 0){
+        joint_angles[0] += 360;
+    }
+
+    // Theta2
+    joint_angles[1] = 180.f - joint_angles[1];
+
+    // Theta3
+    joint_angles[2] = joint_angles[2] - 50.3f;
+
+    // Theta4
+    joint_angles[3] = round(joint_angles[3]*1000)/1000;
+    if(joint_angles[3] > 180){
+        joint_angles[3] = - 360 + joint_angles[3];
+    }
+
+    // Theta5
+    joint_angles[4] += 112;
+
+    // Theta6
+    joint_angles[5] = 180 - joint_angles[5];
+    if(joint_angles[5] > 180){
+        joint_angles[5] -= 360;
+    }
+}
+
+static void remove_offsets_from_angles(float* joint_angles){
+    // Theta1
+    if(joint_angles[0] > 180){
+        joint_angles[0] -= 360;
+    }
+
+    // Theta2
+    joint_angles[1] = 180.f - joint_angles[1];
+
+    // Theta3
+    joint_angles[2] = joint_angles[2] + 50.3f + 180.f;
+
+    // Theta4
+    if(joint_angles[3] < 0){
+        joint_angles[3] += 360;
+    }
+
+    // Theta5
+    joint_angles[4] -= 112;
+
+    // Theta6
+    joint_angles[5] = 180 - joint_angles[5];
+    if(joint_angles[5] < 0){
+        joint_angles[5] += 360;
+    }
 }
 
 
@@ -24,6 +85,14 @@ Robot::Robot(std::vector<std::unique_ptr<Joint>>& joints) {
 
     // Initialize Kinematics Algorithm
     this->k_algorithms = std::make_unique<Algorithm6Dof>(map, joint_offsets);
+
+    GPIO_PIN gripper_pin, feedback_pin;
+    gripper_pin.gpio_pin = GRIPPER_PWM_Pin;
+    gripper_pin.gpio_port = GRIPPER_PWM_GPIO_Port;
+
+    feedback_pin.gpio_pin = GRIPPER_FEEDBACK_Pin;
+    feedback_pin.gpio_port = GRIPPER_FEEDBACK_GPIO_Port;
+    this->gripper = std::make_unique<Gripper>(gripper_pin, feedback_pin, &hadc1, &htim2);
 
     // Ensure that the systems check if done before any action
     systems_status = operation_status_init_robot(failure, 0x02);
@@ -72,23 +141,31 @@ operation_status Robot::moveJoint(uint8_t joint_number, float position, bool blo
 }
 
 operation_status Robot::moveJoints(float* angles) {
-    operation_status status;
+    float joint_angles_with_removed_offsets[6];
     for(int i = 0; i < 6; i++){
-        status = moveJoint(i, angles[i], false);
-
-        /*if(status.result == failure){
-            return status;
-        }*/
+        joint_angles_with_removed_offsets[i] = angles[i];
+        moveJoint(i, angles[i], false);
     }
+
+    remove_offsets_from_angles(joint_angles_with_removed_offsets);
+    convertAllToRad(joint_angles_with_removed_offsets, 6);
+    this->k_algorithms->forwardKinematics(joint_angles_with_removed_offsets, robot_arm_points);
+
+    while(getMovement());
     return operation_status_init_robot(success, 0x00);
 }
 
 operation_status Robot::move2Coordinates(float x, float y, float z, float yaw, float pitch, float roll) {
     if(lengthUnits == inches){
         x = inches2Millimeters(x);
-        y = inches2Millimeters(x);
+        y = inches2Millimeters(y);
         z = inches2Millimeters(z);
     }
+
+    // Convert input millimeters to cm
+    x /= 10.f;
+    y /= 10.f;
+    z /= 10.f;
 
     if(angleUnits == degrees){
         yaw = deg2Rad(yaw);
@@ -97,46 +174,30 @@ operation_status Robot::move2Coordinates(float x, float y, float z, float yaw, f
     }
 
     float rot_mat_d[9] = {};
-    float rotation_angles[3] = {yaw, pitch, roll};
 
     matrix_f32 rotation_matrix;
     matrix_init_f32(&rotation_matrix, 3, 3, rot_mat_d);
 
     k_algorithms->createRotationMatrix(yaw, pitch, roll, &rotation_matrix);
-    for(int i = 0; i < 3; i ++){
-        printf("%f %f %f\n", rot_mat_d[3*i], rot_mat_d[3*i+1], rot_mat_d[3*i+2]);
-    }
-
     k_algorithms->inverseKinematics(x, y, z, &rotation_matrix, joint_angles);
-
     convertAllToDeg(joint_angles, 6);
 
-    //TODO Add offsets handling before passing angles to the execution
-    // Temporarily
-    if(joint_angles[0] < 0){
-        joint_angles[0] += 360;
-    }
+    add_offsets_to_angles(joint_angles);
 
-    joint_angles[1] = 180.f - joint_angles[1];
-    joint_angles[2] = joint_angles[2] - 50.3f;
-
-    joint_angles[3] = round(joint_angles[3]*1000)/1000;
-
-    if(joint_angles[3] > 360){
-        joint_angles[3] -= 360;
-    }
-
-    joint_angles[4] += 112;
-
+    // Check if the movement is possible for each of joints
+    operation_status status;
     for(int i = 0; i < 6; i++) {
-        printf("Theta%d: %f\n", i, joint_angles[i]);
+        status = this->joints[i]->isMovementPossible(joint_angles[i]);
+        if(status.result == failure){
+            return status;
+        }
     }
 
     return moveJoints(joint_angles);
 }
 
 operation_status Robot::move2Default() {
-    float angles[6] = {270.f, 60.f, 35.f, 0.1f, 112.f, 0.1f};
+    float angles[6] = {270.f, 60.f, 35.f, 0.0f, 112.f, 0.0f};
     return moveJoints(angles);
 }
 
@@ -214,6 +275,36 @@ operation_status Robot::getEncoderData(uint8_t joint_number, MagneticEncoderData
     return operation_status_init_robot(success, 0x00);
 }
 
+operation_status Robot::getJointPosition(uint8_t joint_number, float *position) {
+    this->joints[joint_number-1]->getJointPosition(position);
+    return operation_status_init_robot(success, 0x00);
+}
+
+void Robot::getJointAngles(float *angles) {
+    for(uint8_t i = 0; i < 6; i++){
+        angles[i] = this->joint_angles[i];
+    }
+
+    if(angleUnits == radians){
+        convertAllToRad(angles, 6);
+    }
+}
+
+void Robot::getRobotArmCoordinates(coordinates* coordinates){
+    for(uint8_t i = 0; i < 6; i++){
+        coordinates[i] = this->robot_arm_points[i];
+        coordinates[i].x *= 10;
+        coordinates[i].y *= 10;
+        coordinates[i].z *= 10;
+
+        if(lengthUnits == inches){
+            millimeters2Inches(coordinates[i].x);
+            millimeters2Inches(coordinates[i].y);
+            millimeters2Inches(coordinates[i].z);
+        }
+    }
+}
+
 operation_status Robot::systemsCheck() {
     // Check status of each joint
     for(uint8_t i = 0; i < 6; i++){
@@ -226,6 +317,31 @@ operation_status Robot::systemsCheck() {
 
     systems_status = operation_status_init_robot(success, 0x00);
     return systems_status;
+}
+
+bool Robot::getMovement() {
+    for(uint8_t i = 0; i < 6; i++){
+        if(this->joints[i]->isMoving()){
+            return true;
+        }
+    }
+    return false;
+}
+
+operation_status Robot::enableGripper() {
+    this->gripper->enableGripper();
+    return operation_status_init_robot(success, 0x00);
+}
+
+operation_status Robot::disableGripper() {
+    this->gripper->disableGripper();
+    return operation_status_init_robot(success, 0x00);
+}
+
+operation_status Robot::setGripperClosedPercentage(float percentage) {
+    enableGripper();
+    this->gripper->setPosition(percentage);
+    return operation_status_init_robot(success, 0x00);
 }
 
 Robot buildRobot(){
@@ -317,17 +433,18 @@ Robot buildRobot(){
     std::unique_ptr<Driver> elbow_roll_driver = std::make_unique<drivers::Driver>(3, elbow_roll_step, elbow_roll_dir, elbow_roll_en, 1, 1.8f, 8);
     std::shared_ptr<Endstop> elbow_roll_endstop = std::make_shared<Endstop>(elbow_roll_endstop_pin, ENDSTOP_TYPE::UP);
 
+
     std::unique_ptr<Joint> elbow_roll_joint = std::make_unique<Joint>(3, elbow_roll_driver,
                                                                       1, drivers::DIRECTION::ANTICLOCKWISE, elbow_roll_endstop, elbow_roll_encoder);
 
     //elbow_roll_joint->setHomingAcceleration(0.25);
     //elbow_roll_joint->setHomingVelocity(0.5);
     elbow_roll_joint->setEncoderHoming();
+    elbow_roll_joint->setSmartEncoderHoming();
     elbow_roll_joint->setHomingSteps(100);
 
-    elbow_roll_joint->setMinPosition(0);
-    elbow_roll_joint->setMaxPosition(360);
-   // elbow_roll_joint->setOffset(-18);
+    elbow_roll_joint->setMinPosition(-180);
+    elbow_roll_joint->setMaxPosition(180);
     elbow_roll_joint->setMaxAcceleration(2);
     elbow_roll_joint->setMaxVelocity(1.5);
 
@@ -371,8 +488,8 @@ Robot buildRobot(){
     std::unique_ptr<Joint> wrist_roll_joint = std::make_unique<Joint>(5, wrist_roll_driver, 1,
                                                                        drivers::DIRECTION::CLOCKWISE, nullptr, wrist_roll_encoder);
 
-    wrist_roll_joint->setMaxPosition(181);
-    wrist_roll_joint->setMinPosition(-181);
+    wrist_roll_joint->setMaxPosition(180);
+    wrist_roll_joint->setMinPosition(-180);
     wrist_roll_joint->setMaxAcceleration(4);
     wrist_roll_joint->setMaxVelocity(3);
     wrist_roll_joint->setHomingVelocity(0.5);
@@ -550,6 +667,50 @@ static operation_status executeMGCODE(Robot& robot, uint16_t code, uint8_t parse
             else{
                 return robot.disableJoints();
             }
+        }
+        case 114:
+        {
+            float position;
+            MagneticEncoderData data;
+
+            if(parse_result == 1) {
+                while(parse_result == 1){
+                    parse_result = parseMessage(&letter, &value, command_str, &counter);
+
+                    if(letter == 'J' && value >= 1 && value < 7){
+                        status = robot.getJointPosition((uint8_t)value, &position);
+                        printf("Joint%d position (calculated): %f deg\n", (uint8_t)value, position);
+                        if(status.result ==  failure){
+                            return status;
+                        }
+                    }
+                    else if(letter == 'E' && value >= 1 && value < 7){
+                        status = robot.getEncoderData((uint8_t)value, &data);
+                        printf("Joint%d position (measured): %f deg\n", (uint8_t)value, data.position);
+                        if(status.result ==  failure){
+                            return status;
+                        }
+                    }
+                }
+            }
+            return operation_status_init_gcode_reader(success, 0x00);
+        }
+        case 280:
+        {
+            if(parse_result == 1) {
+                parseMessage(&letter, &value, command_str, &counter);
+
+                if (letter == 'P' && value >= 0 && value <= 100) {
+                    status = robot.setGripperClosedPercentage(value);
+                    return status;
+                }
+            }
+            break;
+        }
+        case 282:
+        {
+            status = robot.disableGripper();
+            return status;
         }
         default:
             break;

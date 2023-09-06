@@ -9,7 +9,7 @@
 #include "read_gcode.h"
 #include "utilities.hpp"
 #include "errors.hpp"
-
+#include "gripper.hpp"
 
 /*  Operation_status information (Robot)
  *
@@ -74,13 +74,23 @@ public:
 
     operation_status updateEncoders();
     operation_status getEncoderData(uint8_t joint_number, MagneticEncoderData* data);
+    operation_status getJointPosition(uint8_t joint_number, float* position);
+    void getJointAngles(float* angles);
+    void getRobotArmCoordinates(coordinates* coordinates);
 
     operation_status systemsCheck();
     operation_status getSystemsStatus();
+    bool getMovement();
+
+    // Gripper
+    operation_status setGripperClosedPercentage(float percentage);
+    operation_status enableGripper();
+    operation_status disableGripper();
 
 private:
     // Kinematics algorithms related variables
     std::unique_ptr<Algorithm6Dof> k_algorithms;
+    std::unique_ptr<Gripper> gripper;
 
     // Link map - ultimately stored in EEPROM / FLASH memory on the robot board, for now in software
     LINK_MAP map =  {
@@ -94,8 +104,8 @@ private:
     // Offsets - ultimately stored in EEPROM / FLASH memory on the robot board, for now in software
     //TODO Complete the offsets values
     float joint_offsets[6] = {0, 0, 0, 0, 0, 0};
-
     float joint_angles[6] = {0, 0, 0, 0, 0, 0};
+
     coordinates robot_arm_points[6] = {{0, 0, 0},
                                        {0, 0, 0},
                                        {0, 0, 0},
@@ -110,6 +120,8 @@ private:
     std::unordered_map<int, std::unique_ptr<Joint>> joints;
     bool homed = false;
     operation_status systems_status;
+
+
 };
 
 Robot buildRobot();

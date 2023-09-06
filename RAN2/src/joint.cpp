@@ -147,6 +147,13 @@ void Joint::moveJointBySteps(unsigned int steps, drivers::DIRECTION direction, f
     }
 }
 
+operation_status Joint::isMovementPossible(float position) const {
+    if(min_pos <= position && position <= max_pos) {
+        return operation_status_init_joint(joint_number, success, 0x00);
+    }
+    return operation_status_init_joint(joint_number, failure, 0x0a);
+}
+
 operation_status Joint::move2Pos(float position, bool blocking) {
     if(homed){
         if(min_pos <= position && position <= max_pos){
@@ -176,6 +183,7 @@ operation_status Joint::move2Pos(float position, bool blocking) {
             joint_position = position;
             return operation_status_init_joint(joint_number, success, 0x00);
         }
+        return operation_status_init_joint(joint_number, failure, 0x0a);
     }
     return operation_status_init_joint(joint_number, failure, 0x06);
 }
@@ -202,6 +210,25 @@ operation_status Joint::setEncoderHoming() {
         else{
             return operation_status_init_joint(joint_number, failure, 0x02);
         }
+    }
+    return operation_status_init_joint(joint_number, failure, 0x05);
+}
+
+operation_status Joint::setSmartEncoderHoming() {
+    if(encoder != nullptr && encoder_homing){
+        smart_encoder_homing = true;
+        return operation_status_init_joint(joint_number, success, 0x00);
+    }
+    return operation_status_init_joint(joint_number, failure, 0x08);
+}
+
+operation_status Joint::disableSmartEncoderHoming() {
+    if(encoder != nullptr && encoder_homing){
+        if(smart_encoder_homing){
+            smart_encoder_homing = false;
+            return operation_status_init_joint(joint_number, success, 0x00);
+        }
+        return operation_status_init_joint(joint_number, failure, 0x09);
     }
     return operation_status_init_joint(joint_number, failure, 0x05);
 }
@@ -274,19 +301,24 @@ operation_status Joint::homeJoint() {
             return encoder_status;
         }
 
-        encoder->updatePosition();
-        float position = encoder->getRawPosition();
-        float homing_position = encoder->getHomingPosition();
+        if(smart_encoder_homing)
+        {
+            encoder->updatePosition();
+            float position = encoder->getRawPosition();
+            float homing_position = encoder->getHomingPosition();
 
-        if (position - homing_position < 0) {
-            first_direction = ANTICLOCKWISE;
-        } else {
-            first_direction = CLOCKWISE;
+            if (position - homing_position < 0) {
+                first_direction = ANTICLOCKWISE;
+            } else {
+                first_direction = CLOCKWISE;
+            }
         }
 
         while (true) {
             accelerateJoint(first_direction, homing_velocity, homing_acceleration);
-            while (driver->getMovement(joint_number) && !encoder->homeEncoder());
+            while (driver->getMovement(joint_number) && !encoder->homeEncoder()){
+                HAL_Delay(3);
+            }
             driver->stopMovement(joint_number);
 
 
@@ -294,7 +326,9 @@ operation_status Joint::homeJoint() {
                 break;
             } else {
                 moveJoint(first_direction, homing_velocity);
-                while (driver->getMovement(joint_number) && !encoder->homeEncoder());
+                while (driver->getMovement(joint_number) && !encoder->homeEncoder()){
+                    HAL_Delay(3);
+                }
                 driver->stopMovement(joint_number);
 
                 break;
@@ -330,6 +364,10 @@ bool Joint::isMotorEnabled() {
     return this->driver->isEnabled();
 }
 
+bool Joint::isMoving() {
+    return this->driver->getMovement(joint_number);
+}
+
 bool Joint::encoderAvailable() {
     if(this->encoder != nullptr){
         return true;
@@ -360,3 +398,7 @@ operation_status Joint::getEncoderData(MagneticEncoderData *data) {
     return operation_status_init_joint(joint_number, failure, 0x05);
 }
 
+operation_status Joint::getJointPosition(float *position) {
+    *position = this->joint_position;
+    return operation_status_init_joint(joint_number, success, 0x00);
+}

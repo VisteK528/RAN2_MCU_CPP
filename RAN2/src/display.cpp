@@ -33,22 +33,22 @@ void Display::refresh() {
 
 void Display::printHeader() {
     hagl_put_text(display, L"RAN3 Software©", 0, 0, rgb565(255, 255, 255), font10x20_ISO8859_1);
-    hagl_put_text(display, L"Command: ", 0, 50, rgb565(255, 255, 255), font6x9);
+    hagl_put_text(display, L"Command: ", 0, 30, rgb565(255, 255, 255), font6x9);
 
-    hagl_put_text(display, L"Result   Module    Code", 0, 80, rgb565(255, 255, 255), font6x9);
+    hagl_put_text(display, L"Result   Module    Code", 0, 60, rgb565(255, 255, 255), font6x9);
 }
 
 void Display::printStatus(operation_status status) {
     std::wstring w_string;
     const wchar_t* status_wchar_string;
 
-    hagl_fill_rectangle_xywh(display, 0, 90, 160, 9, rgb565(0, 0, 0));
+    hagl_fill_rectangle_xywh(display, 0, 70, 160, 9, rgb565(0, 0, 0));
 
     if(status.result == in_progress){
         w_string += L"In progress...  ";
 
         status_wchar_string = w_string.c_str();
-        hagl_put_text(display, status_wchar_string, 0, 90, rgb565(255, 255, 0), font6x9);
+        hagl_put_text(display, status_wchar_string, 0, 70, rgb565(255, 255, 0), font6x9);
         refresh();
     }
     else{
@@ -56,13 +56,13 @@ void Display::printStatus(operation_status status) {
             w_string += L"Success";
 
             status_wchar_string = w_string.c_str();
-            hagl_put_text(display, status_wchar_string, 0, 90, rgb565(0, 255, 0), font6x9);
+            hagl_put_text(display, status_wchar_string, 0, 70, rgb565(0, 255, 0), font6x9);
         }
         else{
             w_string += L"Failure";
 
             status_wchar_string = w_string.c_str();
-            hagl_put_text(display, status_wchar_string, 0, 90, rgb565(255, 0, 0), font6x9);
+            hagl_put_text(display, status_wchar_string, 0, 70, rgb565(255, 0, 0), font6x9);
         }
         w_string.clear();
         w_string += module_to_hex(status.module);
@@ -70,14 +70,21 @@ void Display::printStatus(operation_status status) {
         w_string += code_to_hex(status.code);
 
         status_wchar_string = w_string.c_str();
-        hagl_put_text(display, status_wchar_string, 60, 90, rgb565(255, 255, 255), font6x9);
+        hagl_put_text(display, status_wchar_string, 60, 70, rgb565(255, 255, 255), font6x9);
         refresh();
     }
 }
 
 void Display::printCommand(wchar_t* command) {
-    hagl_fill_rectangle_xywh(display, 0, 60, 160-10+6*9, 9, rgb565(0, 0, 0));
+    hagl_fill_rectangle_xywh(display, 0, 40, 160-10+6*9, 9, rgb565(0, 0, 0));
 
-    hagl_put_text(display, command, 0, 60, rgb565(255, 255, 255), font6x9);
+    hagl_put_text(display, command, 0, 40, rgb565(255, 255, 255), font6x9);
+    hagl_flush(display);
+}
+
+void Display::printCustomString(wchar_t *string, uint8_t row) {
+    hagl_fill_rectangle_xywh(display, 0, 90 + row*15, 160-10+6*9, 15, rgb565(0, 0, 0));
+
+    hagl_put_text(display, string, 0, 90 + row*15, rgb565(255, 255, 255), font5x7);
     hagl_flush(display);
 }

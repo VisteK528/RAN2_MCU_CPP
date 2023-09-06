@@ -12,7 +12,7 @@
  *  Drivers (From 1 to 6)               0x03 - 0x08
  *  Joints (From 1 to 6)                0x09 - 0x0e
  *  Encoders (From 1 to 6)              0x0f - 0x14
- *  End Effector                        0x15
+ *  Gripper                             0x15
  *
  * */
 
@@ -23,7 +23,7 @@ typedef enum{
     driver1=0x03, driver2=0x04, driver3=0x05, driver4=0x06, driver5=0x07, driver6=0x08,
     joint1=0x09, joint2=0x0a, joint3=0x0b, joint4=0x0c, joint5=0x0d, joint6=0x0e,
     encoder1=0x0f, encoder2=0x10, encoder3=0x11, encoder4=0x12, encoder5=0x13, encoder6=0x14,
-    end_effector=0x15
+    gripper=0x15
 } operation_module_code;
 
 typedef enum{
