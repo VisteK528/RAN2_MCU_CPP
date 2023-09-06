@@ -159,29 +159,29 @@ void Algorithm6Dof::forwardKinematics(float *angles, coordinates *position_point
     // Base point (J1 revolute point)
     this->arm_position_points[1].x = 0;
     this->arm_position_points[1].y = 0;
-    this->arm_position_points[1].z = BASE_HEIGHT;
+    this->arm_position_points[1].z = linkMap[BASE_HEIGHT];
 
     // Shoulder point (J2 revolute point)
     this->arm_position_points[2].x  = 0;
     this->arm_position_points[2].y  = 0;
-    this->arm_position_points[2].z  = BASE_HEIGHT + SHOULDER_HEIGHT;
+    this->arm_position_points[2].z  = linkMap[BASE_HEIGHT] + linkMap[SHOULDER_HEIGHT];
 
     // Elbow point (J3 revolute point)
-    short_hyp = cos(angles[1]) * SHOULDER_LENGTH;
+    short_hyp = cos(angles[1]) * linkMap[SHOULDER_LENGTH];
     this->arm_position_points[3].x  = short_hyp * cos(angles[0]);
     this->arm_position_points[3].y  = short_hyp * sin(angles[0]);
-    this->arm_position_points[3].z  = BASE_HEIGHT + SHOULDER_HEIGHT + sin(angles[1]) * SHOULDER_LENGTH;
+    this->arm_position_points[3].z  = linkMap[BASE_HEIGHT] + linkMap[SHOULDER_HEIGHT] + sin(angles[1]) * linkMap[SHOULDER_LENGTH];
 
     // Wrist center point
-    hyp = sqrt(pow(SHOULDER_LENGTH, 2.f) + pow(ELBOW_LENGTH, 2.f) - 2*SHOULDER_LENGTH*ELBOW_LENGTH*cos(angles[2]-(float)M_PI));
+    hyp = sqrt(pow(linkMap[SHOULDER_LENGTH], 2.f) + pow(linkMap[ELBOW_LENGTH], 2.f) - 2*linkMap[SHOULDER_LENGTH]*linkMap[ELBOW_LENGTH]*cos(angles[2]-(float)M_PI));
 
-    alfa = acos((pow(ELBOW_LENGTH, 2.f) - pow(SHOULDER_LENGTH, 2.f) - pow(hyp, 2.f))/(-2*SHOULDER_LENGTH*hyp));
+    alfa = acos((pow(linkMap[ELBOW_LENGTH], 2.f) - pow(linkMap[SHOULDER_LENGTH], 2.f) - pow(hyp, 2.f))/(-2*linkMap[SHOULDER_LENGTH]*hyp));
     beta = angles[1] - alfa;
     long_hyp = hyp*cos(beta);
 
     this->arm_position_points[4].x  = long_hyp*cos(angles[0]);
     this->arm_position_points[4].y  = long_hyp*sin(angles[0]);
-    this->arm_position_points[4].z  = sin(beta)*hyp + BASE_HEIGHT + SHOULDER_HEIGHT;
+    this->arm_position_points[4].z  = sin(beta)*hyp + linkMap[BASE_HEIGHT] + linkMap[SHOULDER_HEIGHT];
 
     // TCP
     float rot_0_6_col[3] = {
@@ -190,9 +190,9 @@ void Algorithm6Dof::forwardKinematics(float *angles, coordinates *position_point
             -cos(angles[4])*(cos(angles[1])*sin(angles[2]-(float)M_PI) + cos(angles[2]-(float)M_PI)*sin(angles[1])) - cos(angles[3])*sin(angles[4])*(cos(angles[1])*cos(angles[2]-(float)M_PI) - sin(angles[1])*sin(angles[2]-(float)M_PI))
     };
     
-    this->arm_position_points[5].x = arm_position_points[4].x - EE_LENGTH*rot_0_6_col[0];
-    this->arm_position_points[5].y = arm_position_points[4].y + EE_LENGTH*rot_0_6_col[1];
-    this->arm_position_points[5].z = arm_position_points[4].z - EE_LENGTH*rot_0_6_col[2];
+    this->arm_position_points[5].x = arm_position_points[4].x - linkMap[EE_LENGTH]*rot_0_6_col[0];
+    this->arm_position_points[5].y = arm_position_points[4].y + linkMap[EE_LENGTH]*rot_0_6_col[1];
+    this->arm_position_points[5].z = arm_position_points[4].z + linkMap[EE_LENGTH]*rot_0_6_col[2];
 
     for(uint8_t i = 0; i < 6; i++){
         position_points[i] = this->arm_position_points[i];

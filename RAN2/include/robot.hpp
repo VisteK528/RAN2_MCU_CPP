@@ -74,6 +74,9 @@ public:
 
     operation_status updateEncoders();
     operation_status getEncoderData(uint8_t joint_number, MagneticEncoderData* data);
+    operation_status getJointPosition(uint8_t joint_number, float* position);
+    void getJointAngles(float* angles);
+    void getRobotArmCoordinates(coordinates* coordinates);
 
     operation_status systemsCheck();
     operation_status getSystemsStatus();
@@ -101,8 +104,8 @@ private:
     // Offsets - ultimately stored in EEPROM / FLASH memory on the robot board, for now in software
     //TODO Complete the offsets values
     float joint_offsets[6] = {0, 0, 0, 0, 0, 0};
-
     float joint_angles[6] = {0, 0, 0, 0, 0, 0};
+
     coordinates robot_arm_points[6] = {{0, 0, 0},
                                        {0, 0, 0},
                                        {0, 0, 0},
@@ -117,6 +120,8 @@ private:
     std::unordered_map<int, std::unique_ptr<Joint>> joints;
     bool homed = false;
     operation_status systems_status;
+
+
 };
 
 Robot buildRobot();

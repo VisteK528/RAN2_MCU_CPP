@@ -28,6 +28,7 @@
  *  Homing not possible, joint motor is disabled                                        0x07
  *  Setting smart encoder homing not possible, encoder not available                    0x08
  *  Disabling smart encoder homing not possible, smart encoder homing hasn't been set   0x09
+ *  Movement not possible, goal position is not within movement range                   0x0a
  ** */
 
 using namespace drivers;
@@ -62,6 +63,8 @@ public:
     operation_status disableSmartEncoderHoming();
     operation_status updateEncoder();
     operation_status getEncoderData(MagneticEncoderData* data);
+    operation_status getJointPosition(float* position);
+    operation_status isMovementPossible(float position) const;
 
     operation_status checkJointStatus();
     operation_status getJointStatus();

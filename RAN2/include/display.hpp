@@ -7,7 +7,6 @@
 #include <string>
 #include <sstream>
 #include <iomanip>
-//#include "../../tft_lcd/fonts/font7x13B-ISO8859-1.h"
 
 class Display{
 public:
@@ -16,6 +15,7 @@ public:
     void refresh();
     void printStatus(operation_status status);
     void printCommand(wchar_t* command);
+    void printCustomString(wchar_t* string, uint8_t row);
 private:
     void printHeader();
     hagl_backend_t* display;

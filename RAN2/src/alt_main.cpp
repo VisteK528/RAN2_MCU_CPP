@@ -1,11 +1,12 @@
 #include "../include/alt_main.hpp"
 #include "../include/robot.hpp"
 #include <cstring>
+#include <string>
+#include <iomanip>
 #include "../Inc/spi.h"
 #include "../include/display.hpp"
 
 #define LINE_MAX_LENGTH	80
-
 
 static char line_buffer[LINE_MAX_LENGTH + 1];
 static wchar_t line_buffer_display[LINE_MAX_LENGTH + 1];
@@ -17,11 +18,37 @@ operation_status background_robot_operation_status;
 uint8_t to_be_displayed = 0;
 
 Robot my_robot;
+coordinates coords[6] = {};
+float angles[6] = {};
+std::string coords_header;
+std::string coords_data;
+
+static void clearCharArray(wchar_t* w_array, uint16_t length){
+    for(uint16_t i = 0; i < length; i++){
+        w_array[i] = 0;
+    }
+}
 
 static void convertCharArrayToWChar(const char* array, wchar_t* w_array, uint16_t length){
     for(uint16_t i = 0; i < length; i++){
         w_array[i] = (wchar_t)array[i];
     }
+}
+
+static std::string generateCoordinatesHeader(){
+    std::stringstream display_string;
+    display_string << std::setfill (' ') << std::setw(10) << "X";
+    display_string << std::setfill (' ') << std::setw(10) << "Y";
+    display_string << std::setfill (' ') << std::setw(10) << "Z";
+    return display_string.str();
+}
+
+static std::string generateCoordinatesString(coordinates* coords){
+    std::stringstream display_string;
+    display_string << " " <<std::fixed << std::setprecision(4) << std::setfill (' ') << std::setw(9) << coords->x << " ";
+    display_string << std::fixed << std::setprecision(4) << std::setfill (' ') << std::setw(9) << coords->y << " ";
+    display_string << std::fixed << std::setprecision(4) << std::setfill (' ') << std::setw(9) << coords->z;
+    return display_string.str();
 }
 
 int __io_putchar(int ch)
@@ -38,22 +65,16 @@ int __io_putchar(int ch)
 uint8_t line_append(uint8_t value)
 {
     if (value == '\r' || value == '\n') {
-        // odebraliśmy znak końca linii
         if (line_length > 0) {
-            // jeśli bufor nie jest pusty to dodajemy 0 na końcu linii
             line_buffer[line_length] = '\0';
-            // przetwarzamy dane
-            // zaczynamy zbieranie danych od nowa
             line_length = 0;
             return 0;
         }
     }
     else {
         if (line_length >= LINE_MAX_LENGTH) {
-            // za dużo danych, usuwamy wszystko co odebraliśmy dotychczas
             line_length = 0;
         }
-        // dopisujemy wartość do bufora
         if(((uint8_t)value == 8  || (uint8_t)value == 127 ) && line_length > 0){
             line_buffer[--line_length] = 0;
         }
@@ -100,6 +121,17 @@ int alt_main() {
                     printf("%d\n", 0x01);                       // Failure
                 }
                 display.printStatus(robot_operation_status);
+
+                // Getting coordinates of End Effector from robot and then printing them on display, to be optimised
+                my_robot.getRobotArmCoordinates(coords);
+                coords_header = generateCoordinatesHeader();
+                convertCharArrayToWChar(coords_header.c_str(), line_buffer_display, coords_header.length());
+                display.printCustomString(line_buffer_display, 0);
+                clearCharArray(line_buffer_display, LINE_MAX_LENGTH + 1);
+                coords_data = generateCoordinatesString(&coords[5]);
+                convertCharArrayToWChar(coords_data.c_str(), line_buffer_display, coords_data.length());
+                display.printCustomString(line_buffer_display, 1);
+                clearCharArray(line_buffer_display, LINE_MAX_LENGTH + 1);
 
             } else if (uart_value != '\0' && line_length > 0) {
                 printf("Got: %s\n", line_buffer);

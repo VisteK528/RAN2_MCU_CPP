@@ -147,6 +147,13 @@ void Joint::moveJointBySteps(unsigned int steps, drivers::DIRECTION direction, f
     }
 }
 
+operation_status Joint::isMovementPossible(float position) const {
+    if(min_pos <= position && position <= max_pos) {
+        return operation_status_init_joint(joint_number, success, 0x00);
+    }
+    return operation_status_init_joint(joint_number, failure, 0x0a);
+}
+
 operation_status Joint::move2Pos(float position, bool blocking) {
     if(homed){
         if(min_pos <= position && position <= max_pos){
@@ -176,6 +183,7 @@ operation_status Joint::move2Pos(float position, bool blocking) {
             joint_position = position;
             return operation_status_init_joint(joint_number, success, 0x00);
         }
+        return operation_status_init_joint(joint_number, failure, 0x0a);
     }
     return operation_status_init_joint(joint_number, failure, 0x06);
 }
@@ -390,3 +398,7 @@ operation_status Joint::getEncoderData(MagneticEncoderData *data) {
     return operation_status_init_joint(joint_number, failure, 0x05);
 }
 
+operation_status Joint::getJointPosition(float *position) {
+    *position = this->joint_position;
+    return operation_status_init_joint(joint_number, success, 0x00);
+}
