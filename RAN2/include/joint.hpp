@@ -29,6 +29,7 @@
  *  Setting smart encoder homing not possible, encoder not available                    0x08
  *  Disabling smart encoder homing not possible, smart encoder homing hasn't been set   0x09
  *  Movement not possible, goal position is not within movement range                   0x0a
+ *  Safeguard stop triggered                                                            0x0b
  ** */
 
 using namespace drivers;
@@ -68,6 +69,9 @@ public:
 
     operation_status checkJointStatus();
     operation_status getJointStatus();
+    
+    operation_status stopJoint();
+    operation_status startJoint();
 
 private:
     unsigned int degrees2Steps(float degrees);
@@ -104,6 +108,7 @@ private:
     bool endstop_homing = true;
     bool encoder_homing = false;
     bool smart_encoder_homing = false;
+    bool safeguard_stop = false;
 
     operation_status joint_status;
 };

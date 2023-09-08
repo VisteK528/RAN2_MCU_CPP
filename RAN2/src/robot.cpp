@@ -76,7 +76,7 @@ static void remove_offsets_from_angles(float* joint_angles){
 }
 
 
-Robot::Robot(std::vector<std::unique_ptr<Joint>>& joints) {
+Robot::Robot(std::vector<std::unique_ptr<Joint>>& joints, GPIO_PIN safeguard_pin) {
     // Initialize joints
     this->joints.reserve(joints.size());
     for (int i = 0; i < joints.size(); i++) {
@@ -93,6 +93,9 @@ Robot::Robot(std::vector<std::unique_ptr<Joint>>& joints) {
     feedback_pin.gpio_pin = GRIPPER_FEEDBACK_Pin;
     feedback_pin.gpio_port = GRIPPER_FEEDBACK_GPIO_Port;
     this->gripper = std::make_unique<Gripper>(gripper_pin, feedback_pin, &hadc1, &htim2);
+    this->gripper->initGripper();
+
+    this->safeguard_pin = safeguard_pin;
 
     // Ensure that the systems check if done before any action
     systems_status = operation_status_init_robot(failure, 0x02);
@@ -305,7 +308,16 @@ void Robot::getRobotArmCoordinates(coordinates* coordinates){
     }
 }
 
-operation_status Robot::systemsCheck() {
+operation_status Robot::systemsCheck(bool initial) {
+
+    if(initial){
+        // Check safeguard button status
+        if(HAL_GPIO_ReadPin(safeguard_pin.gpio_port, safeguard_pin.gpio_pin) == GPIO_PIN_RESET){
+            systems_status = operation_status_init_robot(failure, 0x03);
+            return systems_status;
+        }
+    }
+
     // Check status of each joint
     for(uint8_t i = 0; i < 6; i++){
         systems_status = this->joints[i]->getJointStatus();
@@ -317,6 +329,23 @@ operation_status Robot::systemsCheck() {
 
     systems_status = operation_status_init_robot(success, 0x00);
     return systems_status;
+}
+
+operation_status Robot::safeguardTrigger() {
+    safeguard_stop = true;
+    for(uint8_t i = 0; i < 6; i++){
+        this->joints[i]->stopJoint();
+    }
+    homed = false;
+    return operation_status_init_robot(success, 0x00);
+}
+
+operation_status Robot::safeguardReset() {
+    safeguard_stop = false;
+    for(uint8_t i = 0; i < 6; i++){
+        this->joints[i]->startJoint();
+    }
+    return operation_status_init_robot(success, 0x00);
 }
 
 bool Robot::getMovement() {
@@ -342,6 +371,10 @@ operation_status Robot::setGripperClosedPercentage(float percentage) {
     enableGripper();
     this->gripper->setPosition(percentage);
     return operation_status_init_robot(success, 0x00);
+}
+
+float Robot::readGripperRawPosition() {
+    return this->gripper->readCurrentPosition();
 }
 
 Robot buildRobot(){
@@ -505,7 +538,11 @@ Robot buildRobot(){
     joints.push_back(std::move(wrist_pitch_joint));
     joints.push_back(std::move(wrist_roll_joint));
 
-    Robot robot(joints);
+    GPIO_PIN safeguard_pin;
+    safeguard_pin.gpio_port = SAFEGUARD_PIN_GPIO_Port;
+    safeguard_pin.gpio_pin = SAFEGUARD_PIN_Pin;
+
+    Robot robot(joints, safeguard_pin);
     return robot;
 }
 
@@ -702,6 +739,7 @@ static operation_status executeMGCODE(Robot& robot, uint16_t code, uint8_t parse
 
                 if (letter == 'P' && value >= 0 && value <= 100) {
                     status = robot.setGripperClosedPercentage(value);
+                    printf("Position: %f\n", robot.readGripperRawPosition());
                     return status;
                 }
             }
@@ -710,6 +748,16 @@ static operation_status executeMGCODE(Robot& robot, uint16_t code, uint8_t parse
         case 282:
         {
             status = robot.disableGripper();
+            return status;
+        }
+        case 410:
+        {
+            status = robot.safeguardTrigger();
+            return status;
+        }
+        case 999:
+        {
+            status = robot.safeguardReset();
             return status;
         }
         default:

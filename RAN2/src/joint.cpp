@@ -137,6 +137,17 @@ void Joint::moveJoint(drivers::DIRECTION direction, float velocity) {
     this->driver->initializeMovement(joint_number, RUN_CONST, 0, movement.phaseTime(velocity), 0);
 }
 
+operation_status Joint::stopJoint() {
+    this->driver->stopMovement(joint_number);
+    this->safeguard_stop = true;
+    return operation_status_init_joint(joint_number, success, 0x00);
+}
+
+operation_status Joint::startJoint() {
+    this->safeguard_stop = false;
+    return operation_status_init_joint(joint_number, success, 0x00);
+}
+
 void Joint::moveJointBySteps(unsigned int steps, drivers::DIRECTION direction, float max_velocity,
                              float max_acceleration, bool blocking) {
     this->driver->setDirection(direction);
@@ -236,6 +247,11 @@ operation_status Joint::disableSmartEncoderHoming() {
 operation_status Joint::homeJoint() {
     DIRECTION first_direction;
     DIRECTION second_direction;
+
+    if(!driver->isEnabled()){
+        return operation_status_init_joint(joint_number, failure, 0x07);
+    }
+
     if (homing_direction == ANTICLOCKWISE) {
         first_direction = ANTICLOCKWISE;
         second_direction = CLOCKWISE;
@@ -244,14 +260,10 @@ operation_status Joint::homeJoint() {
         second_direction = ANTICLOCKWISE;
     }
 
-    if(!driver->isEnabled()){
-        return operation_status_init_joint(joint_number, failure, 0x07);
-    }
-
     if (endstop_homing) {
-        while (true) {
+        while (!safeguard_stop) {
             accelerateJoint(first_direction, homing_velocity, homing_acceleration);
-            while (driver->getMovement(joint_number) && !endstop->checkSensor());
+            while (driver->getMovement(joint_number) && !endstop->checkSensor() && !safeguard_stop);
             driver->stopMovement(joint_number);
 
 
@@ -259,34 +271,34 @@ operation_status Joint::homeJoint() {
                 moveJointBySteps(homing_steps, second_direction, max_velocity, max_acceleration, true);
 
                 accelerateJoint(first_direction, homing_velocity / 5.f, homing_acceleration);
-                while (driver->getMovement(joint_number) && !endstop->checkSensor());
+                while (driver->getMovement(joint_number) && !endstop->checkSensor() && !safeguard_stop);
                 driver->stopMovement(joint_number);
 
                 if (endstop->checkSensor()) {
                     break;
                 } else {
                     moveJoint(first_direction, homing_velocity / 5.f);
-                    while (driver->getMovement(joint_number) && !endstop->checkSensor());
+                    while (driver->getMovement(joint_number) && !endstop->checkSensor() && !safeguard_stop);
                     driver->stopMovement(joint_number);
                     break;
                 }
             } else {
                 moveJoint(first_direction, homing_velocity);
-                while (driver->getMovement(joint_number) && !endstop->checkSensor());
+                while (driver->getMovement(joint_number) && !endstop->checkSensor() && !safeguard_stop);
                 driver->stopMovement(joint_number);
 
                 if (endstop->checkSensor()) {
                     moveJointBySteps(homing_steps, second_direction, max_velocity, max_acceleration, true);
 
                     accelerateJoint(first_direction, homing_velocity / 5.f, homing_acceleration);
-                    while (driver->getMovement(joint_number) && !endstop->checkSensor());
+                    while (driver->getMovement(joint_number) && !endstop->checkSensor() && !safeguard_stop);
                     driver->stopMovement(joint_number);
 
                     if (endstop->checkSensor()) {
                         break;
                     } else {
                         moveJoint(first_direction, homing_velocity / 5.f);
-                        while (driver->getMovement(joint_number) && !endstop->checkSensor());
+                        while (driver->getMovement(joint_number) && !endstop->checkSensor() && !safeguard_stop);
                         driver->stopMovement(joint_number);
                         break;
                     }
@@ -314,9 +326,9 @@ operation_status Joint::homeJoint() {
             }
         }
 
-        while (true) {
+        while (!safeguard_stop) {
             accelerateJoint(first_direction, homing_velocity, homing_acceleration);
-            while (driver->getMovement(joint_number) && !encoder->homeEncoder()){
+            while (driver->getMovement(joint_number) && !encoder->homeEncoder() && !safeguard_stop){
                 HAL_Delay(3);
             }
             driver->stopMovement(joint_number);
@@ -326,7 +338,7 @@ operation_status Joint::homeJoint() {
                 break;
             } else {
                 moveJoint(first_direction, homing_velocity);
-                while (driver->getMovement(joint_number) && !encoder->homeEncoder()){
+                while (driver->getMovement(joint_number) && !encoder->homeEncoder() && !safeguard_stop){
                     HAL_Delay(3);
                 }
                 driver->stopMovement(joint_number);
@@ -335,6 +347,11 @@ operation_status Joint::homeJoint() {
             }
         }
     }
+
+    if(safeguard_stop){
+        return operation_status_init_joint(joint_number, failure, 0x0b);
+    }
+
     joint_position = 0;
     homed = true;
     if(offset != 0){

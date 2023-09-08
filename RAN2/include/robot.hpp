@@ -22,6 +22,7 @@
  *  Operation continue                                                                  0x01
  *
  *  Systems check not done                                                              0x02
+ *  Safeguard button triggered or not connected                                         0x03
  *
  ** */
 
@@ -51,7 +52,7 @@ typedef enum{
 
 class Robot{
 public:
-    Robot(std::vector<std::unique_ptr<Joint>>& joints);
+    Robot(std::vector<std::unique_ptr<Joint>>& joints, GPIO_PIN safeguard_pin);
     Robot()=default;
 
     operation_status home();
@@ -78,14 +79,18 @@ public:
     void getJointAngles(float* angles);
     void getRobotArmCoordinates(coordinates* coordinates);
 
-    operation_status systemsCheck();
+    operation_status systemsCheck(bool initial);
     operation_status getSystemsStatus();
     bool getMovement();
 
     // Gripper
     operation_status setGripperClosedPercentage(float percentage);
+    float readGripperRawPosition();
     operation_status enableGripper();
     operation_status disableGripper();
+
+    operation_status safeguardTrigger();
+    operation_status safeguardReset();
 
 private:
     // Kinematics algorithms related variables
@@ -119,9 +124,11 @@ private:
     // Movement & Joint variables
     std::unordered_map<int, std::unique_ptr<Joint>> joints;
     bool homed = false;
+
+    // Safety and status variables
     operation_status systems_status;
-
-
+    bool safeguard_stop = false;
+    GPIO_PIN safeguard_pin;
 };
 
 Robot buildRobot();

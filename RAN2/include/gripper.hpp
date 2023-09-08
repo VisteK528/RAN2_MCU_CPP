@@ -24,13 +24,15 @@ class Gripper{
 public:
     Gripper(GPIO_PIN servo_pwm_pin, GPIO_PIN feedback_pin, ADC_HandleTypeDef* adc, TIM_HandleTypeDef* tim);
 
+    operation_status initGripper();
     operation_status enableGripper();
     operation_status disableGripper();
     operation_status setPosition(float position);
     float getCurrentPosition();
     operation_status getGripperStatus();
-private:
     float readCurrentPosition();
+private:
+    void rawSetPosition(float position);
 
     ADC_HandleTypeDef* adc;
     TIM_HandleTypeDef* tim;
@@ -39,9 +41,9 @@ private:
     GPIO_PIN feedback_pin;
 
     uint16_t position_ms;
-    float position;
-    float set_position;
-    float read_position;
+    float position = 0;
+    float set_position = 0;
+    float read_position = 0;
 
     operation_status current_status;
 };

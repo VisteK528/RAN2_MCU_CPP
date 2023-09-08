@@ -22,6 +22,7 @@ coordinates coords[6] = {};
 float angles[6] = {};
 std::string coords_header;
 std::string coords_data;
+uint16_t counter = 0;
 
 static void clearCharArray(wchar_t* w_array, uint16_t length){
     for(uint16_t i = 0; i < length; i++){
@@ -102,7 +103,8 @@ int alt_main() {
     printf("RAN2 Software MCU©\n");
 
     my_robot = buildRobot();
-    my_robot.systemsCheck();
+    robot_operation_status = my_robot.systemsCheck(true);
+    display.printStatus(robot_operation_status);
 
     start = true;
 
@@ -157,7 +159,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim){
         DriverHandleCallback(htim);
     }
     else if(start && !my_robot.getMovement()){
-        if(my_robot.systemsCheck().result == success){
+        if(my_robot.systemsCheck(false).result == success){
             background_robot_operation_status = my_robot.updateEncoders();
             if(background_robot_operation_status.result == failure){
                 to_be_displayed++;
@@ -165,4 +167,14 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim){
         }
     }
 
+}
+
+void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
+{
+    // GPIO_PIN = 4 / PC_2 GPIO EXT2
+    if(GPIO_Pin == 4){
+        my_robot.safeguardTrigger();
+        printf("Triggered: %d\n", counter);
+        counter++;
+    }
 }

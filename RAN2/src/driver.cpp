@@ -201,6 +201,10 @@ void DriverHandleCallback(TIM_HandleTypeDef* htim){
             step_pin.gpio_pin = J6_STEP_Pin;
         }
 
+        if(!movement_data[joint_number].isMoving){
+            HAL_TIM_Base_Stop_IT(htim);
+        }
+
         switch (movement_data[joint_number].mode) {
             case 0:
                 accelerateToVelocity(step_pin, joint_number, htim);
