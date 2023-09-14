@@ -37,8 +37,13 @@ Joint::Joint(uint8_t joint_number, std::unique_ptr<drivers::Driver>& driver,
     this->gear_teeth = gear_teeth;
     this->homing_direction = homing_direction;
 
-    this->movement = Movement(this->driver->getMotorResolution(), this->driver->getDriverResolution(),
-                              this->driver->getGearTeeth(), gear_teeth);
+    this->motor_step = this->driver->getMotorResolution();
+    this->driver_microstep = this->driver->getDriverResolution();
+    this->motor_shaft_gear_teeth = this->driver->getGearTeeth();
+
+    this->one_pulse_step = deg2Rad(motor_step/(float)driver_microstep);
+    this->speed_gear_ratio = (float)motor_shaft_gear_teeth/(float)joint_gear_teeth;
+    this->torque_gear_ratio = 1/speed_gear_ratio;
 
     if(sensor != nullptr){
         setEndstopHoming();
@@ -80,10 +85,6 @@ operation_status Joint::getJointStatus() {
     return this->joint_status;
 }
 
-uint8_t Joint::getJointNumber() const {
-    return this->joint_number;
-}
-
 void Joint::setHomingSteps(uint16_t homing_steps) {
     this->homing_steps = homing_steps;
 }
@@ -116,25 +117,55 @@ void Joint::setOffset(float offset) {
     this->offset = offset;
 }
 
-void Joint::setBaseAngle(float base_angle) {
-    this->base_angle = base_angle;
-}
-
 unsigned int Joint::degrees2Steps(float degrees) {
     float gear_ratio = (float)this->gear_teeth/(float)driver->getGearTeeth();
     float steps = (degrees/driver->getMotorResolution())*gear_ratio*(float)driver->getDriverResolution()*2.f;
     return (unsigned int)steps;
 }
 
+float Joint::motorVel(float phase_time) {
+    float term = (360.f/motor_step) * (phase_time * (float)driver_microstep);
+    float angular_velocity = (2*(float)M_PI)/term;
+    return angular_velocity;
+}
+
+float Joint::phaseTime(float joint_ang_vel) {
+    float motor_ang_vel = motorVelFromJointVel(joint_ang_vel);
+    return one_pulse_step/motor_ang_vel;
+}
+
+float Joint::jointVelFromMotorVel(float motor_ang_vel) {
+    return motor_ang_vel * speed_gear_ratio;
+}
+
+float Joint::motorVelFromJointVel(float joint_ang_vel) {
+    return joint_ang_vel / speed_gear_ratio;
+}
+
+float Joint::getGearSpeedRatio() const {
+    return speed_gear_ratio;
+}
+
+float Joint::getMinDelay(float max_speed) {
+    return seconds2Microseconds(one_pulse_step/motorVelFromJointVel(max_speed));
+}
+
+float Joint::getStartDelay(float acceleration) const {
+    float angle = one_pulse_step;
+    const float constant = 0.13568198123907316536355537605674f;
+    return 2000000.f * std::sqrt(2.f * angle / acceleration) * constant;
+}
+
+
 void Joint::accelerateJoint(drivers::DIRECTION direction, float velocity, float acceleration) {
     this->driver->setDirection(direction);
-    this->driver->initializeMovement(joint_number, ACCEL, movement.getMinDelay(velocity),
-                                     movement.getStartDelay(acceleration), 0);
+    this->driver->initializeMovement(joint_number, ACCEL, getMinDelay(velocity),
+                                     getStartDelay(acceleration), 0);
 }
 
 void Joint::moveJoint(drivers::DIRECTION direction, float velocity) {
     this->driver->setDirection(direction);
-    this->driver->initializeMovement(joint_number, RUN_CONST, 0, movement.phaseTime(velocity), 0);
+    this->driver->initializeMovement(joint_number, RUN_CONST, 0, phaseTime(velocity), 0);
 }
 
 operation_status Joint::stopJoint() {
@@ -151,8 +182,8 @@ operation_status Joint::startJoint() {
 void Joint::moveJointBySteps(unsigned int steps, drivers::DIRECTION direction, float max_velocity,
                              float max_acceleration, bool blocking) {
     this->driver->setDirection(direction);
-    this->driver->initializeMovement(joint_number, MOVE_STEPS, movement.getMinDelay(max_velocity),
-                                     movement.getStartDelay(max_acceleration), steps);
+    this->driver->initializeMovement(joint_number, MOVE_STEPS, getMinDelay(max_velocity),
+                                     getStartDelay(max_acceleration), steps);
     if(blocking){
         while(driver->getMovement(joint_number));
     }

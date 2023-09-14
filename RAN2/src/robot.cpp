@@ -445,7 +445,6 @@ Robot buildRobot(){
                                                                  drivers::DIRECTION::ANTICLOCKWISE, elbow_endstop);
 
     elbow_joint->setMaxPosition(70);
-    elbow_joint->setBaseAngle(48);
     elbow_joint->setMaxVelocity(1.6);
     elbow_joint->setMaxAcceleration(3);
 
@@ -739,7 +738,6 @@ static operation_status executeMGCODE(Robot& robot, uint16_t code, uint8_t parse
 
                 if (letter == 'P' && value >= 0 && value <= 100) {
                     status = robot.setGripperClosedPercentage(value);
-                    printf("Position: %f\n", robot.readGripperRawPosition());
                     return status;
                 }
             }

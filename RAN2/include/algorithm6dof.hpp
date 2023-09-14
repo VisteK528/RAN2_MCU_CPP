@@ -35,8 +35,6 @@ public:
 private:
     LINK_MAP linkMap;
     float* offsets;
-
-    float joint_data;
     coordinates arm_position_points[6];
 };
 

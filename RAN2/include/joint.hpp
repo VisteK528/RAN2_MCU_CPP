@@ -2,7 +2,6 @@
 #define RAN2_MCU_CPP_JOINT_HPP
 
 #include "driver.hpp"
-#include "movement.hpp"
 #include "sensors.hpp"
 #include <iostream>
 #include <memory>
@@ -38,7 +37,7 @@ class Joint{
 public:
     Joint(uint8_t number, std::unique_ptr<Driver>& driver, uint16_t gear_teeth, DIRECTION homing_direction, std::shared_ptr<Endstop> sensor = nullptr, std::shared_ptr<MagneticEncoder> encoder = nullptr);
 
-    uint8_t getJointNumber() const;
+    // Setters
     void setHomingSteps(uint16_t homing_steps);
     void setHomingVelocity(float homing_velocity);
     void setHomingAcceleration(float homing_acceleration);
@@ -47,7 +46,15 @@ public:
     void setMinPosition(float min_position);
     void setMaxPosition(float max_position);
     void setOffset(float offset);
-    void setBaseAngle(float base_angle);
+
+    // Movement functions
+    float getMinDelay(float max_speed);
+    float getStartDelay(float acceleration) const;
+    float motorVel(float phase_time);
+    float phaseTime(float joint_ang_vel);
+    float jointVelFromMotorVel(float motor_ang_vel);
+    float motorVelFromJointVel(float joint_ang_vel);
+    float getGearSpeedRatio() const;
 
     operation_status disableMotor();
     operation_status enableMotor();
@@ -87,9 +94,18 @@ private:
     float max_pos = 360;
     float joint_position = 0;
     float offset = 0;
-    float base_angle = 0;
 
     uint8_t joint_number;
+
+    float motor_step;
+    uint16_t driver_microstep;
+    float one_pulse_step;
+
+    uint16_t motor_shaft_gear_teeth;
+    uint16_t joint_gear_teeth;
+
+    float speed_gear_ratio;
+    float torque_gear_ratio;
 
     // Homing Variables
     DIRECTION homing_direction;
@@ -100,8 +116,6 @@ private:
     // Movement variables
     float max_velocity = 0.7;
     float max_acceleration = 0.75;
-
-    Movement movement;
 
     uint16_t gear_teeth;
     bool homed = false;

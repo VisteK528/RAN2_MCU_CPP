@@ -5,6 +5,7 @@
 #include <iomanip>
 #include "../Inc/spi.h"
 #include "../include/display.hpp"
+#include "../../libraries/SDP/include/sdp.h"
 
 #define LINE_MAX_LENGTH	80
 
@@ -24,7 +25,7 @@ std::string coords_header;
 std::string coords_data;
 uint16_t counter = 0;
 
-static void clearCharArray(wchar_t* w_array, uint16_t length){
+static void clearWCharArray(wchar_t* w_array, uint16_t length){
     for(uint16_t i = 0; i < length; i++){
         w_array[i] = 0;
     }
@@ -100,7 +101,6 @@ int alt_main() {
     Display display;
     display.init();
 
-    printf("RAN2 Software MCU©\n");
 
     my_robot = buildRobot();
     robot_operation_status = my_robot.systemsCheck(true);
@@ -108,42 +108,49 @@ int alt_main() {
 
     start = true;
 
+    SDP_Message message;
+    HAL_StatusTypeDef status;
+
     while (1) {
-        uint8_t uart_value = 0;
-        if (HAL_UART_Receive(&huart2, &uart_value, 1, 0) == HAL_OK) {
-            if (line_append(uart_value) == 0) {
-                robot_operation_status.result = in_progress;
-                display.printStatus(robot_operation_status);
+        status = SDP_Receive(&message, 100);
+        if(status == HAL_OK){
+            status = HAL_BUSY;
+            for(uint8_t i = 0; i < 80; i++){
+                line_buffer[i] = message.pData[i];
+            }
 
-                robot_operation_status = executeGCODE(my_robot, line_buffer);
-                memset(line_buffer, 0, 80);
-                if (robot_operation_status.result == success) {
-                    printf("%d\n", 0x00);                       // Success
-                } else {
-                    printf("%d\n", 0x01);                       // Failure
-                }
-                display.printStatus(robot_operation_status);
+            memset(message.pData, 0, 14336);
 
-                // Getting coordinates of End Effector from robot and then printing them on display, to be optimised
-                my_robot.getRobotArmCoordinates(coords);
-                coords_header = generateCoordinatesHeader();
-                convertCharArrayToWChar(coords_header.c_str(), line_buffer_display, coords_header.length());
-                display.printCustomString(line_buffer_display, 0);
-                clearCharArray(line_buffer_display, LINE_MAX_LENGTH + 1);
-                coords_data = generateCoordinatesString(&coords[5]);
-                convertCharArrayToWChar(coords_data.c_str(), line_buffer_display, coords_data.length());
-                display.printCustomString(line_buffer_display, 1);
-                clearCharArray(line_buffer_display, LINE_MAX_LENGTH + 1);
+            robot_operation_status.result = in_progress;
+            display.printStatus(robot_operation_status);
 
-            } else if (uart_value != '\0' && line_length > 0) {
-                printf("Got: %s\n", line_buffer);
+            robot_operation_status = executeGCODE(my_robot, line_buffer);
+            convertCharArrayToWChar(line_buffer, line_buffer_display, LINE_MAX_LENGTH + 1);
+            display.printCommand(line_buffer_display);
+            memset(line_buffer, 0, 80);
 
-                convertCharArrayToWChar(line_buffer, line_buffer_display, LINE_MAX_LENGTH + 1);
-                display.printCommand(line_buffer_display);
+            display.printStatus(robot_operation_status);
+
+            // Getting coordinates of End Effector from robot and then printing them on display, to be optimised
+            my_robot.getRobotArmCoordinates(coords);
+            coords_header = generateCoordinatesHeader();
+            convertCharArrayToWChar(coords_header.c_str(), line_buffer_display, coords_header.length());
+            display.printCustomString(line_buffer_display, 0);
+            clearWCharArray(line_buffer_display, LINE_MAX_LENGTH + 1);
+            coords_data = generateCoordinatesString(&coords[5]);
+            convertCharArrayToWChar(coords_data.c_str(), line_buffer_display, coords_data.length());
+            display.printCustomString(line_buffer_display, 1);
+            clearWCharArray(line_buffer_display, LINE_MAX_LENGTH + 1);
+
+            if(robot_operation_status.result == success) {
+                printf("%d\r\n", 0x00);                       // Success
+            } else {
+                printf("%d\r\n", 0x02);                       // Failure
             }
 
             fflush(stdin);
             fflush(stdout);
+
         }
 
         if (to_be_displayed > 0) {
@@ -151,7 +158,8 @@ int alt_main() {
             to_be_displayed--;
         }
 
-    }
+        }
+
 }
 
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim){
@@ -174,7 +182,6 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
     // GPIO_PIN = 4 / PC_2 GPIO EXT2
     if(GPIO_Pin == 4){
         my_robot.safeguardTrigger();
-        printf("Triggered: %d\n", counter);
         counter++;
     }
 }
