@@ -11,10 +11,11 @@ public:
     Endstop(GPIO_PIN , ENDSTOP_TYPE type);
     Endstop() = default;
     ~Endstop() = default;
-    bool checkSensor();
+
+    /// Checks if the endstop was triggered and returns result
+    bool checkEndstop();
 private:
-    GPIO_TypeDef* signal_pin_port;
-    uint16_t signal_pin;
+    GPIO_PIN signal_pin;
     ENDSTOP_TYPE type;
 };
 #endif //ROBOTARMNUMBER2CPP_SENSORS_HPP

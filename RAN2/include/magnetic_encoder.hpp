@@ -31,6 +31,11 @@ class MagneticEncoder{
 public:
     MagneticEncoder(uint8_t encoderNumber, uint8_t encoderAddress, uint8_t channelNumber, I2C_HandleTypeDef* i2c, float homingPosition, float degPerRotation);
 
+    /** @brief Checks if the encoder is ready for the work.
+     * @returns
+     * One of 4 possible operation status codes. If everything is operational then method returns successful result
+     * with operation code 0x00
+     * */
     operation_status checkEncoder();
 
     /** @brief Checks if the raw position of the encoder is at homing position with given tolerance
@@ -83,6 +88,13 @@ public:
      * */
     float getDegPerRotation();
 
+    /** @brief Updates position and calculates velocity and acceleration based on previous velocity
+     * and acceleration measurements. This method should be used in ISR and be called every 100ms in order to get
+     * good measurements.
+     *
+     * @returns
+     * Status of the operation
+     * */
     operation_status updateParameters();
 
 

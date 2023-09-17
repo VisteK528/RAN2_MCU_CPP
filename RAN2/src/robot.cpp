@@ -92,7 +92,7 @@ Robot::Robot(std::vector<std::unique_ptr<Joint>>& joints, GPIO_PIN safeguard_pin
 
     feedback_pin.gpio_pin = GRIPPER_FEEDBACK_Pin;
     feedback_pin.gpio_port = GRIPPER_FEEDBACK_GPIO_Port;
-    this->gripper = std::make_unique<Gripper>(gripper_pin, feedback_pin, &hadc1, &htim2);
+    this->gripper = std::make_unique<effector::Gripper>(gripper_pin, feedback_pin, &hadc1, &htim2);
     this->gripper->initGripper();
 
     this->safeguard_pin = safeguard_pin;
@@ -375,6 +375,15 @@ operation_status Robot::setGripperClosedPercentage(float percentage) {
 
 float Robot::readGripperRawPosition() {
     return this->gripper->readCurrentPosition();
+}
+
+operation_status Robot::gripperSmartClose() {
+    this->gripper->smartClose();
+    return operation_status_init_robot(success, 0x00);
+}
+
+operation_status Robot::gripperOpen() {
+    return setGripperClosedPercentage(0);
 }
 
 Robot buildRobot(){
@@ -741,6 +750,16 @@ static operation_status executeMGCODE(Robot& robot, uint16_t code, uint8_t parse
         case 282:
         {
             status = robot.disableGripper();
+            return status;
+        }
+        case 360:
+        {
+            status = robot.gripperSmartClose();
+            return status;
+        }
+        case 361:
+        {
+            status = robot.gripperOpen();
             return status;
         }
         case 410:

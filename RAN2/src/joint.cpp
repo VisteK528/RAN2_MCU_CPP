@@ -290,42 +290,42 @@ operation_status Joint::homeJoint() {
     if (homing_type == HOMING_TYPE::endstop) {
         while (!safeguard_stop) {
             accelerateJoint(first_direction, homing_velocity, homing_acceleration);
-            while (driver->checkMovement(joint_number) && !endstop->checkSensor() && !safeguard_stop);
+            while (driver->checkMovement(joint_number) && !endstop->checkEndstop() && !safeguard_stop);
             driver->stopMovement(joint_number);
 
 
-            if (endstop->checkSensor()) {
+            if (endstop->checkEndstop()) {
                 moveJointBySteps(homing_steps, second_direction, max_velocity, max_acceleration, true);
 
                 accelerateJoint(first_direction, homing_velocity / 5.f, homing_acceleration);
-                while (driver->checkMovement(joint_number) && !endstop->checkSensor() && !safeguard_stop);
+                while (driver->checkMovement(joint_number) && !endstop->checkEndstop() && !safeguard_stop);
                 driver->stopMovement(joint_number);
 
-                if (endstop->checkSensor()) {
+                if (endstop->checkEndstop()) {
                     break;
                 } else {
                     moveJoint(first_direction, homing_velocity / 5.f);
-                    while (driver->checkMovement(joint_number) && !endstop->checkSensor() && !safeguard_stop);
+                    while (driver->checkMovement(joint_number) && !endstop->checkEndstop() && !safeguard_stop);
                     driver->stopMovement(joint_number);
                     break;
                 }
             } else {
                 moveJoint(first_direction, homing_velocity);
-                while (driver->checkMovement(joint_number) && !endstop->checkSensor() && !safeguard_stop);
+                while (driver->checkMovement(joint_number) && !endstop->checkEndstop() && !safeguard_stop);
                 driver->stopMovement(joint_number);
 
-                if (endstop->checkSensor()) {
+                if (endstop->checkEndstop()) {
                     moveJointBySteps(homing_steps, second_direction, max_velocity, max_acceleration, true);
 
                     accelerateJoint(first_direction, homing_velocity / 5.f, homing_acceleration);
-                    while (driver->checkMovement(joint_number) && !endstop->checkSensor() && !safeguard_stop);
+                    while (driver->checkMovement(joint_number) && !endstop->checkEndstop() && !safeguard_stop);
                     driver->stopMovement(joint_number);
 
-                    if (endstop->checkSensor()) {
+                    if (endstop->checkEndstop()) {
                         break;
                     } else {
                         moveJoint(first_direction, homing_velocity / 5.f);
-                        while (driver->checkMovement(joint_number) && !endstop->checkSensor() && !safeguard_stop);
+                        while (driver->checkMovement(joint_number) && !endstop->checkEndstop() && !safeguard_stop);
                         driver->stopMovement(joint_number);
                         break;
                     }

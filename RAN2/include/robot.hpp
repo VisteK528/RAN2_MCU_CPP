@@ -85,6 +85,8 @@ public:
 
     // Gripper
     operation_status setGripperClosedPercentage(float percentage);
+    operation_status gripperSmartClose();
+    operation_status gripperOpen();
     float readGripperRawPosition();
     operation_status enableGripper();
     operation_status disableGripper();
