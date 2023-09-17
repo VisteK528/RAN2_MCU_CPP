@@ -79,7 +79,7 @@ static void remove_offsets_from_angles(float* joint_angles){
 Robot::Robot(std::vector<std::unique_ptr<Joint>>& joints, GPIO_PIN safeguard_pin) {
     // Initialize joints
     this->joints.reserve(joints.size());
-    for (int i = 0; i < joints.size(); i++) {
+    for (uint8_t i = 0; i < 6; i++) {
         this->joints[i] = std::move(joints[i]);
     }
 
@@ -103,7 +103,7 @@ Robot::Robot(std::vector<std::unique_ptr<Joint>>& joints, GPIO_PIN safeguard_pin
 
 operation_status Robot::home(){
     operation_status status;
-    for(uint16_t i = 0; i < joints.size(); i++){
+    for(uint8_t i = 0; i < 6; i++){
         status = homeJoint(i);
         if(status.result == failure){
             return status;
@@ -210,7 +210,7 @@ operation_status Robot::enableJoint(uint8_t joint_number) {
 
 operation_status Robot::enableJoints() {
     operation_status status;
-    for(int i = 0; i < joints.size(); i++){
+    for(uint8_t i = 0; i < 6; i++){
         status = enableJoint(i);
 
         if(status.result == failure){
@@ -226,7 +226,7 @@ operation_status Robot::disableJoint(uint8_t joint_number) {
 
 operation_status Robot::disableJoints() {
     operation_status status;
-    for(int i = 0; i < joints.size(); i++){
+    for(uint8_t i = 0; i < 6; i++){
         status = disableJoint(i);
 
         if(status.result == failure){
@@ -395,11 +395,11 @@ Robot buildRobot(){
 
     std::unique_ptr<Joint> waist_joint = std::make_unique<Joint>(0, waist_driver, 125,
                                                                  drivers::DIRECTION::ANTICLOCKWISE, waist_endstop);
-    waist_joint->setMinPosition(-1);
+    waist_joint->setMinPosition(0);
     waist_joint->setMaxPosition(350);
 
     waist_joint->setMaxVelocity(1.6);
-    waist_joint->setMaxAcceleration(3);
+    waist_joint->setMaxAcceleration(1.5);
 
     // Shoulder
     GPIO_PIN shoulder_step, shoulder_dir, shoulder_en, shoulder_endstop_pin;
@@ -469,12 +469,9 @@ Robot buildRobot(){
     std::unique_ptr<Joint> elbow_roll_joint = std::make_unique<Joint>(3, elbow_roll_driver,
                                                                       1, drivers::DIRECTION::ANTICLOCKWISE, elbow_roll_endstop, elbow_roll_encoder);
 
-    //elbow_roll_joint->setHomingAcceleration(0.25);
-    //elbow_roll_joint->setHomingVelocity(0.5);
     elbow_roll_joint->setEncoderHoming();
     elbow_roll_joint->setSmartEncoderHoming();
     elbow_roll_joint->setHomingSteps(100);
-
     elbow_roll_joint->setMinPosition(-180);
     elbow_roll_joint->setMaxPosition(180);
     elbow_roll_joint->setMaxAcceleration(2);
@@ -498,7 +495,6 @@ Robot buildRobot(){
     std::unique_ptr<Joint> wrist_pitch_joint = std::make_unique<Joint>(4, wrist_pitch_driver, 40,
                                                                        drivers::DIRECTION::ANTICLOCKWISE, wrist_pitch_endstop);
     wrist_pitch_joint->setHomingSteps(100);
-
     wrist_pitch_joint->setMaxAcceleration(4);
     wrist_pitch_joint->setMaxVelocity(3);
     wrist_pitch_joint->setMaxPosition(250);
@@ -526,7 +522,6 @@ Robot buildRobot(){
     wrist_roll_joint->setMaxVelocity(3);
     wrist_roll_joint->setHomingVelocity(0.5);
     wrist_roll_joint->setHomingAcceleration(1);
-    
     
 
     std::vector<std::unique_ptr<Joint>> joints;

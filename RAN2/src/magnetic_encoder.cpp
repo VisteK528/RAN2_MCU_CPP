@@ -6,7 +6,7 @@ static void selectI2CChannels(uint8_t i) {
     unsigned char temp[1];
     temp[0] = 1 << i;
 
-    //0x70 is address
+    // 0x70 is the address of the I2C multiplexer
     HAL_I2C_Master_Transmit(&hi2c1, 0x70<<1, temp, 1, 100);
 }
 

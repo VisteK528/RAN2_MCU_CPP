@@ -165,23 +165,34 @@ HAL_StatusTypeDef SDP_Transmit(uint8_t* pData, uint16_t nbytes){
 }
 
 HAL_StatusTypeDef receive_frame(SDP_Frame_Data* frame_data, uint32_t timeout){
-    HAL_StatusTypeDef status;
-    uint8_t pStart[3];
-    uint16_t nbytes = 3;
-    crc remainder = 0;
-    status = HAL_UART_Receive(&huart2, pStart, nbytes, timeout);
+    volatile HAL_StatusTypeDef status;
+    uint8_t frameStart = 0;
 
-    if(status == HAL_TIMEOUT){
+    uint8_t pStart[2];
+    uint16_t nbytes = 2;
+    crc remainder = 0;
+
+    uint32_t time_start = HAL_GetTick();
+    uint32_t time = HAL_GetTick();
+    while(time < time_start + timeout){
+        HAL_UART_Receive(&huart2, &frameStart, 1, 0);
+
+        if(frameStart == START_BYTE){
+            break;
+        }
+
+        time = HAL_GetTick();
+    }
+
+    if(frameStart != START_BYTE){
         return HAL_TIMEOUT;
     }
 
-    if(pStart[0] != START_BYTE){
-        return HAL_ERROR;
-    }
+    HAL_UART_Receive(&huart2, pStart, nbytes, timeout);
 
-    frame_data->mode = pStart[1] >> 6;
-    uint8_t frame_data_bytes = pStart[2] & 0x07;
-    frame_data->sequence_frames =  ((pStart[1] & 0x3F) << 5 )| ((pStart[2] & 0xF8) >> 3);
+    frame_data->mode = pStart[0] >> 6;
+    uint8_t frame_data_bytes = pStart[1] & 0x07;
+    frame_data->sequence_frames =  ((pStart[0] & 0x3F) << 5 ) | ((pStart[1] & 0xF8) >> 3);
 
     nbytes = frame_data_bytes + CRC_BYTES + 1;
     uint8_t* pFrame = malloc(nbytes * sizeof(uint8_t));
@@ -189,6 +200,8 @@ HAL_StatusTypeDef receive_frame(SDP_Frame_Data* frame_data, uint32_t timeout){
     HAL_UART_Receive(&huart2, pFrame, nbytes, timeout);
     copy_uint8_t(pFrame, pDataBuffer, nbytes-1, 0);
     crcFast(pDataBuffer, &remainder, nbytes-1);
+
+    //check remainder
 
     copy_uint8_t(pDataBuffer, frame_data->pData, frame_data_bytes, 0);
     frame_data->dataLength = frame_data_bytes;
@@ -200,8 +213,9 @@ HAL_StatusTypeDef SDP_Receive(SDP_Message* message, uint32_t timeout){
     SDP_Frame_Data frame_data;
     HAL_StatusTypeDef status;
     uint16_t frames_received = 0;
-
+    message->dataLength = 0;
     status = receive_frame(&frame_data, timeout);
+
     if(status == HAL_TIMEOUT){
         return HAL_TIMEOUT;
     }
@@ -213,11 +227,13 @@ HAL_StatusTypeDef SDP_Receive(SDP_Message* message, uint32_t timeout){
     }
     else if(frame_data.mode == FIRST_FRAME){
         uint16_t framesLeft = frame_data.sequence_frames-1;
+        message->dataLength += frame_data.dataLength;
         copy_uint8_t(frame_data.pData, message->pData, frame_data.dataLength, 0);
         frames_received++;
 
         while(framesLeft > 0){
             status = receive_frame(&frame_data, timeout);
+            message->dataLength += frame_data.dataLength;
             if(status == HAL_ERROR){
                 return status;
             }

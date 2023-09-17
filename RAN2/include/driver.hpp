@@ -21,9 +21,6 @@ namespace drivers{
         uint16_t driver_resolution;
         uint16_t gear_teeth;
 
-        float max_speed;
-        float max_acceleration;
-
         bool motor_enabled = true;
 
         DIRECTION current_direction=CLOCKWISE;
@@ -37,12 +34,9 @@ namespace drivers{
         /**
          * \brief Function takes delay value in ms and generates impulse on step PIN with given interval
          * */
-        void moveDelay(float delay);
         uint16_t getGearTeeth() const;
         float getMotorResolution() const;
         uint16_t getDriverResolution() const;
-        float getMaxSpeed() const;
-        void setMaxSpeed(float speed);
         void setDirection(DIRECTION movement_direction);
         void initializeMovement(uint8_t joint_number, int mode, float max_speed_delay, float d0, int iterations);
         bool getMovement(uint8_t joint_number);
@@ -65,7 +59,7 @@ typedef struct {
     //! Peroid of next timer delay. At start this value set the accelration rate.
     float step_delay;
     //! What step_pos to start decelaration
-    unsigned int decel_start;
+    int decel_start;
     //! Sets deceleration rate.
     signed int decel_val;
     //! Minimum time delay (max speed)

@@ -101,54 +101,54 @@ int alt_main() {
     Display display;
     display.init();
 
-
     my_robot = buildRobot();
     robot_operation_status = my_robot.systemsCheck(true);
     display.printStatus(robot_operation_status);
-
     start = true;
 
     SDP_Message message;
     HAL_StatusTypeDef status;
 
     while (1) {
-        status = SDP_Receive(&message, 100);
+        status = SDP_Receive(&message, 1000);
         if(status == HAL_OK){
-            status = HAL_BUSY;
-            for(uint8_t i = 0; i < 80; i++){
-                line_buffer[i] = message.pData[i];
+
+            std::vector<std::string> commands = {};
+            commands = splitCommandFile(&message);
+            for(auto& command: commands){
+
+                // Get ready status
+                robot_operation_status.result = in_progress;
+                display.printStatus(robot_operation_status);
+
+                // Execute command
+                robot_operation_status = executeGCODE(my_robot, command.c_str());
+
+                // Send command result
+                if(robot_operation_status.result == success) {
+                    printf("%d\r\n", 0x00);                       // Success
+                } else {
+                    printf("%d\r\n", 0x01);                       // Failure
+                }
+
+                // Display command result
+                convertCharArrayToWChar(command.c_str(), line_buffer_display, LINE_MAX_LENGTH + 1);
+                display.printCommand(line_buffer_display);
+                display.printStatus(robot_operation_status);
+
+                // Getting coordinates of End Effector from robot and then printing them on display, to be optimised
+                my_robot.getRobotArmCoordinates(coords);
+                coords_header = generateCoordinatesHeader();
+                convertCharArrayToWChar(coords_header.c_str(), line_buffer_display, coords_header.length());
+                display.printCustomString(line_buffer_display, 0);
+                clearWCharArray(line_buffer_display, LINE_MAX_LENGTH + 1);
+                coords_data = generateCoordinatesString(&coords[5]);
+                convertCharArrayToWChar(coords_data.c_str(), line_buffer_display, coords_data.length());
+                display.printCustomString(line_buffer_display, 1);
+                clearWCharArray(line_buffer_display, LINE_MAX_LENGTH + 1);
+
+                HAL_Delay(1000);
             }
-
-            memset(message.pData, 0, 14336);
-
-            robot_operation_status.result = in_progress;
-            display.printStatus(robot_operation_status);
-
-            robot_operation_status = executeGCODE(my_robot, line_buffer);
-            convertCharArrayToWChar(line_buffer, line_buffer_display, LINE_MAX_LENGTH + 1);
-            display.printCommand(line_buffer_display);
-            memset(line_buffer, 0, 80);
-
-            display.printStatus(robot_operation_status);
-
-            // Getting coordinates of End Effector from robot and then printing them on display, to be optimised
-            my_robot.getRobotArmCoordinates(coords);
-            coords_header = generateCoordinatesHeader();
-            convertCharArrayToWChar(coords_header.c_str(), line_buffer_display, coords_header.length());
-            display.printCustomString(line_buffer_display, 0);
-            clearWCharArray(line_buffer_display, LINE_MAX_LENGTH + 1);
-            coords_data = generateCoordinatesString(&coords[5]);
-            convertCharArrayToWChar(coords_data.c_str(), line_buffer_display, coords_data.length());
-            display.printCustomString(line_buffer_display, 1);
-            clearWCharArray(line_buffer_display, LINE_MAX_LENGTH + 1);
-
-            if(robot_operation_status.result == success) {
-                printf("%d\r\n", 0x00);                       // Success
-            } else {
-                printf("%d\r\n", 0x02);                       // Failure
-            }
-
-            fflush(stdin);
             fflush(stdout);
 
         }
@@ -158,7 +158,7 @@ int alt_main() {
             to_be_displayed--;
         }
 
-        }
+    }
 
 }
 

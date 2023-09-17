@@ -42,19 +42,17 @@ Joint::Joint(uint8_t joint_number, std::unique_ptr<drivers::Driver>& driver,
     this->motor_shaft_gear_teeth = this->driver->getGearTeeth();
 
     this->one_pulse_step = deg2Rad(motor_step/(float)driver_microstep);
-    this->speed_gear_ratio = (float)motor_shaft_gear_teeth/(float)joint_gear_teeth;
+    this->speed_gear_ratio = (float)motor_shaft_gear_teeth/(float)gear_teeth;
     this->torque_gear_ratio = 1/speed_gear_ratio;
 
     if(sensor != nullptr){
         setEndstopHoming();
-        endstop_homing = true;
-        encoder_homing = false;
+        homing_type = HOMING_TYPE::endstop;
         joint_status = operation_status_init_joint(joint_number, success, 0x00);
     }
     else if(sensor == nullptr && encoder != nullptr){
         if(encoder->getDegPerRotation() == 1.f){
-            endstop_homing = false;
-            encoder_homing = true;
+            homing_type = HOMING_TYPE::encoder;
             joint_status = operation_status_init_joint(joint_number, success, 0x00);
         }
         else{
@@ -69,7 +67,7 @@ Joint::Joint(uint8_t joint_number, std::unique_ptr<drivers::Driver>& driver,
     this->encoder = encoder;
 }
 
-operation_status Joint::checkJointStatus() {
+operation_status Joint::updateJointStatus() {
     if(encoder != nullptr){
         joint_status = encoder->checkEncoder();
 
@@ -231,8 +229,7 @@ operation_status Joint::move2Pos(float position, bool blocking) {
 }
 
 operation_status Joint::setEndstopHoming() {
-    endstop_homing = true;
-    endstop_homing = false;
+    homing_type = HOMING_TYPE ::endstop;
 
     if(endstop != nullptr){
         return operation_status_init_joint(joint_number, success, 0x00);
@@ -245,8 +242,7 @@ operation_status Joint::setEndstopHoming() {
 operation_status Joint::setEncoderHoming() {
     if(encoder != nullptr){
         if(encoder->getDegPerRotation() == 1.f){
-            endstop_homing = false;
-            encoder_homing = true;
+            homing_type = HOMING_TYPE ::encoder;
             return operation_status_init_joint(joint_number, success, 0x00);
         }
         else{
@@ -257,7 +253,7 @@ operation_status Joint::setEncoderHoming() {
 }
 
 operation_status Joint::setSmartEncoderHoming() {
-    if(encoder != nullptr && encoder_homing){
+    if(encoder != nullptr && homing_type == HOMING_TYPE::encoder){
         smart_encoder_homing = true;
         return operation_status_init_joint(joint_number, success, 0x00);
     }
@@ -265,7 +261,7 @@ operation_status Joint::setSmartEncoderHoming() {
 }
 
 operation_status Joint::disableSmartEncoderHoming() {
-    if(encoder != nullptr && encoder_homing){
+    if(encoder != nullptr && homing_type == HOMING_TYPE::encoder){
         if(smart_encoder_homing){
             smart_encoder_homing = false;
             return operation_status_init_joint(joint_number, success, 0x00);
@@ -291,7 +287,7 @@ operation_status Joint::homeJoint() {
         second_direction = ANTICLOCKWISE;
     }
 
-    if (endstop_homing) {
+    if (homing_type == HOMING_TYPE::endstop) {
         while (!safeguard_stop) {
             accelerateJoint(first_direction, homing_velocity, homing_acceleration);
             while (driver->getMovement(joint_number) && !endstop->checkSensor() && !safeguard_stop);

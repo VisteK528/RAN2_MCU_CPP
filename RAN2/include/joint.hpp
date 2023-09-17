@@ -33,9 +33,57 @@
 
 using namespace drivers;
 
+typedef enum {
+    endstop,
+    encoder
+} HOMING_TYPE;
+
 class Joint{
 public:
     Joint(uint8_t number, std::unique_ptr<Driver>& driver, uint16_t gear_teeth, DIRECTION homing_direction, std::shared_ptr<Endstop> sensor = nullptr, std::shared_ptr<MagneticEncoder> encoder = nullptr);
+
+    // General methods
+
+    /*!
+     * Emergency function, instantaneously stops the joint and sets safeguard_stop variable to true.
+     * \returns
+     * Status of the operation.
+     * */
+    operation_status stopJoint();
+
+    /*!
+     * Sets the safeguard_stop variable to False, thus enabling possible movement of the joint in the future.
+     * \returns
+     * Status of the operation.
+     * */
+    operation_status startJoint();
+
+    /*!
+     * Performs quick check of the subsystems of the joint and their readiness. If every system works properly
+     * method sets the joint status result to success. Otherwise the result is set to failure.
+     * \returns
+     * Joint status.
+     * */
+    operation_status updateJointStatus();
+
+    /*!
+     * Joint status getter
+     * \returns
+     * Joint status.
+     * */
+    operation_status getJointStatus();
+
+    /*!
+     * Checks if the joint is currently moving and then, if the condition is satisfied, returns true.
+     * Otherwise returns false.
+     * */
+    bool isMoving();
+
+
+    operation_status move2Pos(float position, bool blocking);
+    operation_status homeJoint();
+    operation_status getJointPosition(float* position);
+    operation_status isMovementPossible(float position) const;
 
     // Setters
     void setHomingSteps(uint16_t homing_steps);
@@ -47,7 +95,7 @@ public:
     void setMaxPosition(float max_position);
     void setOffset(float offset);
 
-    // Movement functions
+    // Movement methods
     float getMinDelay(float max_speed);
     float getStartDelay(float acceleration) const;
     float motorVel(float phase_time);
@@ -56,29 +104,21 @@ public:
     float motorVelFromJointVel(float joint_ang_vel);
     float getGearSpeedRatio() const;
 
+    // Driver / Motor methods
     operation_status disableMotor();
     operation_status enableMotor();
     bool isMotorEnabled();
-    bool isMoving();
 
-    operation_status move2Pos(float position, bool blocking);
-    operation_status homeJoint();
-
+    // Encoder methods
     bool encoderAvailable();
     operation_status setEncoderHoming();
-    operation_status setEndstopHoming();
     operation_status setSmartEncoderHoming();
     operation_status disableSmartEncoderHoming();
     operation_status updateEncoder();
     operation_status getEncoderData(MagneticEncoderData* data);
-    operation_status getJointPosition(float* position);
-    operation_status isMovementPossible(float position) const;
 
-    operation_status checkJointStatus();
-    operation_status getJointStatus();
-    
-    operation_status stopJoint();
-    operation_status startJoint();
+    // Endstop methods
+    operation_status setEndstopHoming();
 
 private:
     unsigned int degrees2Steps(float degrees);
@@ -102,8 +142,8 @@ private:
     float one_pulse_step;
 
     uint16_t motor_shaft_gear_teeth;
-    uint16_t joint_gear_teeth;
 
+    // Gear ratios
     float speed_gear_ratio;
     float torque_gear_ratio;
 
@@ -119,8 +159,7 @@ private:
 
     uint16_t gear_teeth;
     bool homed = false;
-    bool endstop_homing = true;
-    bool encoder_homing = false;
+    HOMING_TYPE homing_type = HOMING_TYPE::endstop;
     bool smart_encoder_homing = false;
     bool safeguard_stop = false;
 

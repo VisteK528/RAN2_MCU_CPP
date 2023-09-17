@@ -76,3 +76,25 @@ uint8_t parseMessage(char* letter, float* value, const char* line, uint16_t* cha
     (*char_counter)++;
     return read_float(line, value, char_counter);
 }
+
+std::vector<std::string> splitCommandFile(SDP_Message* message){
+    std::vector<std::string> commands = {};
+    std::string command_str;
+    uint16_t command_start_index = 0;
+
+    // Iterate through entire received message
+    for(uint16_t i = 0; i < message->dataLength; i++){
+
+        // If LF(Line feed '\n') character is spotted with preceding CR(Carriage return '\r') character then start
+        // command (substring) extraction
+        if(message->pData[i] == '\n' && message->pData[i-1] == '\r'){
+            for(int j = command_start_index; j < i+1; j++){
+                command_str += message->pData[j];
+            }
+            commands.push_back(command_str);
+            command_str = "";
+            command_start_index = i+1;
+        }
+    }
+    return commands;
+}
