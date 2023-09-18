@@ -97,7 +97,7 @@ public:
 private:
     // Kinematics algorithms related variables
     std::unique_ptr<Algorithm6Dof> k_algorithms;
-    std::unique_ptr<Gripper> gripper;
+    std::unique_ptr<effector::Gripper> gripper;
 
     // Link map - ultimately stored in EEPROM / FLASH memory on the robot board, for now in software
     LINK_MAP map =  {

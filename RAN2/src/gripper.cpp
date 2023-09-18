@@ -87,29 +87,28 @@ operation_status effector::Gripper::setPosition(float new_position) {
 }
 
 bool effector::Gripper::smartClose() {
-    uint16_t i = 0;
+    float i = 0;
     while(i < 90){
         setPosition(i);
 
-        float estimated, measured;
+        volatile float estimated, measured;
         HAL_Delay(25);
 
         measured = measureADC(adc, DEFAULT_SAMPLES);
         estimated = ((float)i/100.f)*(GRIPPER_HIGH-GRIPPER_LOW) + GRIPPER_LOW;
 
         // First check
-        if(fabsf(estimated-measured) > 0.1){
+        if(fabsf(estimated-measured) > 0.15){
 
             // Second check
             HAL_Delay(250);
             measured = measureADC(adc, DEFAULT_SAMPLES);
-            if(fabsf(estimated-measured) > 0.1) {
+            if(fabsf(estimated-measured) > 0.15) {
                 break;
             }
         }
-
         HAL_Delay(25);
-        i += 1;
+        i += 2;
     }
     return true;
 }
