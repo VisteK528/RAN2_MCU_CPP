@@ -195,6 +195,10 @@ operation_status Joint::isMovementPossible(float position) const {
 }
 
 operation_status Joint::move2Pos(float position, bool blocking) {
+    if(safeguard_stop){
+        return operation_status_init_joint(joint_number, failure, 0x0b);
+    }
+
     if(homed){
         if(min_pos <= position && position <= max_pos){
             float new_position = joint_position - position;
@@ -277,6 +281,9 @@ operation_status Joint::homeJoint() {
 
     if(!driver->isMotorEnabled()){
         return operation_status_init_joint(joint_number, failure, 0x07);
+    }
+    else if(safeguard_stop){
+        return operation_status_init_joint(joint_number, failure, 0x0b);
     }
 
     if (homing_direction == ANTICLOCKWISE) {

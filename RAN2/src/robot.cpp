@@ -40,12 +40,6 @@ static void add_offsets_to_angles(float* joint_angles){
 
     // Theta5
     joint_angles[4] += 112;
-
-    // Theta6
-    joint_angles[5] = 180 - joint_angles[5];
-    if(joint_angles[5] > 180){
-        joint_angles[5] -= 360;
-    }
 }
 
 static void remove_offsets_from_angles(float* joint_angles){
@@ -67,12 +61,6 @@ static void remove_offsets_from_angles(float* joint_angles){
 
     // Theta5
     joint_angles[4] -= 112;
-
-    // Theta6
-    joint_angles[5] = 180 - joint_angles[5];
-    if(joint_angles[5] < 0){
-        joint_angles[5] += 360;
-    }
 }
 
 
@@ -523,7 +511,7 @@ Robot buildRobot(){
 
 
     std::unique_ptr<Joint> wrist_roll_joint = std::make_unique<Joint>(5, wrist_roll_driver, 1,
-                                                                       drivers::DIRECTION::CLOCKWISE, nullptr, wrist_roll_encoder);
+                                                                       drivers::DIRECTION::ANTICLOCKWISE, nullptr, wrist_roll_encoder);
 
     wrist_roll_joint->setMaxPosition(180);
     wrist_roll_joint->setMinPosition(-180);

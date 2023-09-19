@@ -5,7 +5,6 @@
 #include <iomanip>
 #include "../Inc/spi.h"
 #include "../include/display.hpp"
-#include "../../libraries/SDP/include/sdp.h"
 
 #define LINE_MAX_LENGTH	80
 
@@ -20,7 +19,6 @@ uint8_t to_be_displayed = 0;
 
 Robot my_robot;
 coordinates coords[6] = {};
-float angles[6] = {};
 std::string coords_header;
 std::string coords_data;
 uint16_t counter = 0;
@@ -121,6 +119,10 @@ int alt_main() {
                 robot_operation_status.result = in_progress;
                 display.printStatus(robot_operation_status);
 
+                // Display command
+                convertCharArrayToWChar(command.c_str(), line_buffer_display, command.length());
+                display.printCommand(line_buffer_display);
+
                 // Execute command
                 robot_operation_status = executeGCODE(my_robot, command.c_str());
 
@@ -132,8 +134,6 @@ int alt_main() {
                 }
 
                 // Display command result
-                convertCharArrayToWChar(command.c_str(), line_buffer_display, LINE_MAX_LENGTH + 1);
-                display.printCommand(line_buffer_display);
                 display.printStatus(robot_operation_status);
 
                 // Getting coordinates of End Effector from robot and then printing them on display, to be optimised
@@ -148,14 +148,15 @@ int alt_main() {
                 clearWCharArray(line_buffer_display, LINE_MAX_LENGTH + 1);
 
                 HAL_Delay(1000);
+
+                if (to_be_displayed > 0) {
+                    display.printStatus(background_robot_operation_status);
+                    to_be_displayed--;
+                }
             }
+            fflush(stdin);
             fflush(stdout);
 
-        }
-
-        if (to_be_displayed > 0) {
-            display.printStatus(background_robot_operation_status);
-            to_be_displayed--;
         }
 
     }

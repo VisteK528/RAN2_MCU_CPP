@@ -27,10 +27,10 @@ effector::Gripper::Gripper(GPIO_PIN servo_pwm_pin, GPIO_PIN feedback_pin, ADC_Ha
     }
 
     float feedback_level = measureADC(adc, DEFAULT_SAMPLES);
-    if(feedback_level < GRIPPER_LOW - 0.2){
+    if(feedback_level < GRIPPER_FEEDBACK_DISCONNECTED_LEVEL){
         current_status = operation_status_init(gripper, failure, 0x02);
     }
-    else if(feedback_level > GRIPPER_HIGH + 0.5){
+    else if(feedback_level > GRIPPER_FEEDBACK_ERROR_LEVEL){
         current_status = operation_status_init(gripper, failure, 0x03);
     }
 
@@ -46,10 +46,10 @@ operation_status effector::Gripper::checkGripper() {
     }
 
     float feedback_level = measureADC(adc, DEFAULT_SAMPLES);
-    if(feedback_level < GRIPPER_LOW - 0.2){
+    if(feedback_level < GRIPPER_FEEDBACK_DISCONNECTED_LEVEL){
         current_status = operation_status_init(gripper, failure, 0x02);
     }
-    else if(feedback_level > GRIPPER_HIGH + 0.5){
+    else if(feedback_level > GRIPPER_FEEDBACK_ERROR_LEVEL){
         current_status = operation_status_init(gripper, failure, 0x03);
     }
 
@@ -61,19 +61,34 @@ operation_status effector::Gripper::initGripper() {
     enableGripper();
     rawSetPosition(0);
     position = 0;
-    set_position = 0;
     read_position = readCurrentPosition();
     return operation_status_init(gripper, success, 0x00);
 }
 
 operation_status effector::Gripper::enableGripper() {
-    HAL_TIM_PWM_Start(tim, TIM_CHANNEL_1);
-    return operation_status_init(gripper, success, 0x00);
+    HAL_StatusTypeDef status;
+    status = HAL_TIM_PWM_Start(tim, TIM_CHANNEL_1);
+
+    if(status == HAL_ERROR){
+        current_status = operation_status_init(gripper, failure, 0x04);
+    }
+    else{
+        current_status = operation_status_init(gripper, success, 0x00);
+    }
+    return current_status;
 }
 
 operation_status effector::Gripper::disableGripper() {
-    HAL_TIM_PWM_Stop(tim, TIM_CHANNEL_1);
-    return operation_status_init(gripper, success, 0x00);
+    HAL_StatusTypeDef status;
+    status = HAL_TIM_PWM_Stop(tim, TIM_CHANNEL_1);
+
+    if(status == HAL_ERROR){
+        current_status = operation_status_init(gripper, failure, 0x04);
+    }
+    else{
+        current_status = operation_status_init(gripper, success, 0x00);
+    }
+    return current_status;
 }
 
 void effector::Gripper::rawSetPosition(float desired_position) {
@@ -82,6 +97,7 @@ void effector::Gripper::rawSetPosition(float desired_position) {
 }
 
 operation_status effector::Gripper::setPosition(float new_position) {
+    this->position = new_position;
     rawSetPosition(new_position);
     return operation_status_init(gripper, success, 0x00);
 }
@@ -91,19 +107,19 @@ bool effector::Gripper::smartClose() {
     while(i < 90){
         setPosition(i);
 
-        volatile float estimated, measured;
+        float estimated, measured;
         HAL_Delay(25);
 
         measured = measureADC(adc, DEFAULT_SAMPLES);
         estimated = ((float)i/100.f)*(GRIPPER_HIGH-GRIPPER_LOW) + GRIPPER_LOW;
 
         // First check
-        if(fabsf(estimated-measured) > 0.15){
+        if(fabsf(estimated-measured) > SMART_GRIPPER_CLOSED_DIFFERENCE){
 
             // Second check
             HAL_Delay(250);
             measured = measureADC(adc, DEFAULT_SAMPLES);
-            if(fabsf(estimated-measured) > 0.15) {
+            if(fabsf(estimated-measured) > SMART_GRIPPER_CLOSED_DIFFERENCE) {
                 break;
             }
         }
@@ -127,7 +143,8 @@ float effector::Gripper::readCurrentPosition() {
     // From Pololu documentaion, but to be checked
     // y - percentage of gripper closed
     // x - measured voltage
-    // y = (x - 0.69)/(2.33 0.69) * 100
+    // y = (x - GRIPPER_LOW)/(GRIPPER_HIGH - GRIPPER_LOW) * 100
+
     float measured_voltage = measureADC(adc, DEFAULT_SAMPLES);
     read_position = (measured_voltage - GRIPPER_LOW)/(GRIPPER_HIGH-GRIPPER_LOW)*100;
     return read_position;
