@@ -133,6 +133,6 @@ private:
     GPIO_PIN safeguard_pin;
 };
 
-operation_status executeGCODE(Robot& robot, const char* command_str);
+operation_status executeGCODE(Robot& robot, std::string& response, const char* command_str);
 
 #endif //ROBOTARMNUMBER2CPP_ROBOT_HPP

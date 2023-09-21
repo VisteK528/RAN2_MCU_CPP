@@ -375,7 +375,7 @@ operation_status Robot::gripperOpen() {
     return setGripperClosedPercentage(0);
 }
 
-static operation_status executeGGCODE(Robot& robot, uint16_t code, uint8_t parse_result, uint16_t counter, const char* command_str){
+static operation_status executeGGCODE(Robot& robot, std::string& response, uint16_t code, uint8_t parse_result, uint16_t counter, const char* command_str){
     float value;
     char letter;
     operation_status status;
@@ -488,7 +488,7 @@ static operation_status executeGGCODE(Robot& robot, uint16_t code, uint8_t parse
     return operation_status_init_gcode_reader(failure, 0x02);
 }
 
-static operation_status executeMGCODE(Robot& robot, uint16_t code, uint8_t parse_result, uint16_t counter, const char* command_str){
+static operation_status executeMGCODE(Robot& robot, std::string& response, uint16_t code, uint8_t parse_result, uint16_t counter, const char* command_str){
     float value;
     char letter;
     operation_status status;
@@ -545,14 +545,22 @@ static operation_status executeMGCODE(Robot& robot, uint16_t code, uint8_t parse
 
                     if(letter == 'J' && value >= 1 && value < 7){
                         status = robot.getJointPosition((uint8_t)value, &position);
-                        printf("Joint%d position (calculated): %f deg\n", (uint8_t)value, position);
+                        response += "J";
+                        response += std::to_string((uint8_t)value);
+                        response += ":";
+                        response += std::to_string(position);
+                        response += "\t";
                         if(status.result ==  failure){
                             return status;
                         }
                     }
                     else if(letter == 'E' && value >= 1 && value < 7){
                         status = robot.getEncoderData((uint8_t)value, &data);
-                        printf("Joint%d position (measured): %f deg\n", (uint8_t)value, data.position);
+                        response += "E";
+                        response += std::to_string((uint8_t)value);
+                        response += ":";
+                        response += std::to_string(data.position);
+                        response += "\t";
                         if(status.result ==  failure){
                             return status;
                         }
@@ -605,7 +613,7 @@ static operation_status executeMGCODE(Robot& robot, uint16_t code, uint8_t parse
 }
 
 
-operation_status executeGCODE(Robot& robot, const char* command_str) {
+operation_status executeGCODE(Robot& robot, std::string& response, const char* command_str){
     uint8_t parse_result = 0;
     uint16_t counter = 0;
     char g_letter;
@@ -615,9 +623,9 @@ operation_status executeGCODE(Robot& robot, const char* command_str) {
 
     switch (g_letter) {
         case 'G':
-            return executeGGCODE(robot, (int)value, parse_result, counter, command_str);
+            return executeGGCODE(robot, response, (int)value, parse_result, counter, command_str);
         case 'M':
-            return executeMGCODE(robot, (int)value, parse_result, counter, command_str);
+            return executeMGCODE(robot, response, (int)value, parse_result, counter, command_str);
         case 'J':
         {
             auto joint_number = (uint8_t)value;

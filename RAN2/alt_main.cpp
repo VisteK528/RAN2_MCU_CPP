@@ -106,6 +106,7 @@ int alt_main() {
 
     SDP_Message message;
     HAL_StatusTypeDef status;
+    std::string response;
 
     while (1) {
         status = SDP_Receive(&message, 1000);
@@ -124,14 +125,19 @@ int alt_main() {
                 display.printCommand(line_buffer_display);
 
                 // Execute command
-                robot_operation_status = executeGCODE(my_robot, command.c_str());
+                response.clear();
+                robot_operation_status = executeGCODE(my_robot, response, command.c_str());
 
-                // Send command result
+                // Add command result
                 if(robot_operation_status.result == success) {
-                    printf("%d\r\n", 0x00);                       // Success
+                    response.insert(0, "0\t");
                 } else {
-                    printf("%d\r\n", 0x01);                       // Failure
+                    response.insert(0, "1\t");
                 }
+                response += "\r\n";
+
+                // Send response
+                SDP_Transmit((uint8_t*)response.c_str(), response.length());
 
                 // Display command result
                 display.printStatus(robot_operation_status);
