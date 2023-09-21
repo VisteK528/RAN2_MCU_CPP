@@ -115,6 +115,11 @@ void Joint::setOffset(float offset) {
     this->offset = offset;
 }
 
+void Joint::setDirection(drivers::DIRECTION direction) {
+    this->homed = false;
+    this->homing_direction = direction;
+}
+
 unsigned int Joint::degrees2Steps(float degrees) {
     float gear_ratio = (float)this->gear_teeth/(float)driver->getGearTeeth();
     float steps = (degrees/driver->getMotorResolution())*gear_ratio*(float)driver->getDriverResolution()*2.f;

@@ -94,6 +94,7 @@ public:
     void setMinPosition(float min_position);
     void setMaxPosition(float max_position);
     void setOffset(float offset);
+    void setDirection(DIRECTION direction);
 
     // Movement methods
     float getMinDelay(float max_speed);

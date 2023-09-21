@@ -29,7 +29,7 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 
-#include "../../RAN2/include/alt_main.hpp"
+#include "../../RAN2/alt_main.hpp"
 
 /* USER CODE END Includes */
 

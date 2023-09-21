@@ -1,10 +1,10 @@
-#include "../include/alt_main.hpp"
-#include "../include/robot.hpp"
+#include "alt_main.hpp"
+#include "include/robot.hpp"
 #include <cstring>
 #include <string>
 #include <iomanip>
-#include "../Inc/spi.h"
-#include "../include/display.hpp"
+#include "spi.h"
+#include "include/display.hpp"
 
 #define LINE_MAX_LENGTH	80
 
