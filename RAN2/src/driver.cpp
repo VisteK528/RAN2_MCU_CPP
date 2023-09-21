@@ -81,22 +81,22 @@ void drivers::Driver::startMovement(uint8_t joint, int mode, float max_speed_del
 
     if(joint >= 0 && joint < 6 && mode >= 0 && mode < 3){
         if(joint == 0){
-            HAL_TIM_Base_Start_IT(&htim10);
+            HAL_TIM_Base_Start_IT(&htim1);
         }
         else if(joint == 1){
-            HAL_TIM_Base_Start_IT(&htim4);
+            HAL_TIM_Base_Start_IT(&htim2);
         }
         else if(joint == 2){
             HAL_TIM_Base_Start_IT(&htim3);
         }
         else if(joint == 3){
-            HAL_TIM_Base_Start_IT(&htim5);
+            HAL_TIM_Base_Start_IT(&htim4);
         }
         else if(joint == 4){
-            HAL_TIM_Base_Start_IT(&htim9);
+            HAL_TIM_Base_Start_IT(&htim5);
         }
         else if(joint == 5){
-            HAL_TIM_Base_Start_IT(&htim11);
+            HAL_TIM_Base_Start_IT(&htim6);
         }
     }
 
@@ -146,21 +146,21 @@ static void accelerateToVelocity(GPIO_PIN step_pin, uint8_t joint, TIM_HandleTyp
 
 void DriverHandleCallback(TIM_HandleTypeDef* htim){
     uint8_t joint = 255;
-    if (htim->Instance == TIM10) {
+    if (htim->Instance == TIM1) {
         joint = 0;
-    } else if(htim->Instance == TIM4){
+    } else if(htim->Instance == TIM2){
         joint = 1;
     }
     else if(htim->Instance == TIM3){
         joint = 2;
     }
-    else if(htim->Instance == TIM5){
+    else if(htim->Instance == TIM4){
         joint = 3;
     }
-    else if(htim->Instance == TIM9){
+    else if(htim->Instance == TIM5){
         joint = 4;
     }
-    else if(htim->Instance == TIM11){
+    else if(htim->Instance == TIM6){
         joint = 5;
     }
 

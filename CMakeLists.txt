@@ -14,7 +14,7 @@ set(SIZE arm-none-eabi-size)
 set(CMAKE_TRY_COMPILE_TARGET_TYPE STATIC_LIBRARY)
 
 # project settings
-project(RAN2_MCU_CPP C CXX ASM)
+project(RAN3_MCU_CPP C CXX ASM)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_C_STANDARD 11)
 
@@ -56,18 +56,18 @@ include_directories(Core/Inc Drivers/STM32F4xx_HAL_Driver/Inc Drivers/STM32F4xx_
         libraries/hagl/include libraries/NumericalMath/include libraries/tft_lcd/include libraries/tft_lcd/fonts)
 link_directories(libraries/NumericalMath/lib)
 
-add_definitions(-DDEBUG -DUSE_HAL_DRIVER -DSTM32F401xE)
+add_definitions(-DDEBUG -DUSE_HAL_DRIVER -DSTM32F446xx)
 
 file(GLOB_RECURSE SOURCES "RAN2/*.*" "Core/*.*" "CMSIS/*.*" "Drivers/*.*" "libraries/hagl/*.*"
         "libraries/NumericalMath/include/*.h" "libraries/tft_lcd/*.*" "libraries/SDP/*.*")
 
-set(LINKER_SCRIPT ${CMAKE_SOURCE_DIR}/STM32F401RETX_FLASH.ld)
+set(LINKER_SCRIPT ${CMAKE_SOURCE_DIR}/STM32F446ZETX_FLASH.ld)
 
 add_link_options(-Wl,-gc-sections,--print-memory-usage,-Map=${PROJECT_BINARY_DIR}/${PROJECT_NAME}.map)
 add_link_options(-mcpu=cortex-m4 -mthumb -mthumb-interwork)
 add_link_options(-T ${LINKER_SCRIPT})
 
-add_executable(${PROJECT_NAME}.elf ${SOURCES} ${LINKER_SCRIPT} )
+add_executable(${PROJECT_NAME}.elf ${SOURCES} ${LINKER_SCRIPT})
 
 target_link_libraries(${PROJECT_NAME}.elf NumericalMath_CM4)
 

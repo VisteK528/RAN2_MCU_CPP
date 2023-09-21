@@ -34,7 +34,7 @@ extern "C" {
 
 /* USER CODE BEGIN Private defines */
 
-typedef struct{
+typedef struct {
     GPIO_TypeDef* gpio_port;
     uint16_t gpio_pin;
 } GPIO_PIN;

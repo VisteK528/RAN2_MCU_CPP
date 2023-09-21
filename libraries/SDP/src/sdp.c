@@ -98,7 +98,7 @@ HAL_StatusTypeDef send_frame(const uint8_t* data, uint16_t sequence_number, uint
         data_array[i+3] = encoded_data[i];
     }
 
-    status = HAL_UART_Transmit(&huart2, data_array, data_array_length, 100);
+    status = HAL_UART_Transmit(&huart3, data_array, data_array_length, 100);
     free(encoded_data);
     free(data_array);
     if(status == HAL_ERROR){
@@ -175,7 +175,7 @@ HAL_StatusTypeDef receive_frame(SDP_Frame_Data* frame_data, uint32_t timeout){
     uint32_t time_start = HAL_GetTick();
     uint32_t time = HAL_GetTick();
     while(time < time_start + timeout){
-        HAL_UART_Receive(&huart2, &frameStart, 1, 0);
+        HAL_UART_Receive(&huart3, &frameStart, 1, 0);
 
         if(frameStart == START_BYTE){
             break;
@@ -188,7 +188,7 @@ HAL_StatusTypeDef receive_frame(SDP_Frame_Data* frame_data, uint32_t timeout){
         return HAL_TIMEOUT;
     }
 
-    HAL_UART_Receive(&huart2, pStart, nbytes, timeout);
+    HAL_UART_Receive(&huart3, pStart, nbytes, timeout);
 
     frame_data->mode = pStart[0] >> 6;
     uint8_t frame_data_bytes = pStart[1] & 0x07;
@@ -197,7 +197,7 @@ HAL_StatusTypeDef receive_frame(SDP_Frame_Data* frame_data, uint32_t timeout){
     nbytes = frame_data_bytes + CRC_BYTES + 1;
     uint8_t* pFrame = malloc(nbytes * sizeof(uint8_t));
     uint8_t* pDataBuffer = malloc((nbytes - 1) * sizeof(uint8_t));
-    HAL_UART_Receive(&huart2, pFrame, nbytes, timeout);
+    HAL_UART_Receive(&huart3, pFrame, nbytes, timeout);
     copy_uint8_t(pFrame, pDataBuffer, nbytes-1, 0);
     crcFast(pDataBuffer, &remainder, nbytes-1);
 

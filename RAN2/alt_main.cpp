@@ -55,10 +55,10 @@ int __io_putchar(int ch)
 {
     if (ch == '\n') {
         uint8_t ch2 = '\r';
-        HAL_UART_Transmit(&huart2, &ch2, 1, HAL_MAX_DELAY);
+        HAL_UART_Transmit(&huart3, &ch2, 1, HAL_MAX_DELAY);
     }
 
-    HAL_UART_Transmit(&huart2, (uint8_t*)&ch, 1, HAL_MAX_DELAY);
+    HAL_UART_Transmit(&huart3, (uint8_t*)&ch, 1, HAL_MAX_DELAY);
     return 1;
 }
 
@@ -187,6 +187,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim){
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 {
     // GPIO_PIN = 4 / PC_2 GPIO EXT2
+    //TODO DO SPRAWDZENIA WARTOŚĆ WYWOŁANIA
     if(GPIO_Pin == 4){
         my_robot.safeguardTrigger();
         counter++;
