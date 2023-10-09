@@ -81,22 +81,22 @@ void drivers::Driver::startMovement(uint8_t joint, int mode, float max_speed_del
 
     if(joint >= 0 && joint < 6 && mode >= 0 && mode < 3){
         if(joint == 0){
-            HAL_TIM_Base_Start_IT(&htim10);
+            HAL_TIM_Base_Start_IT(&htim1);
         }
         else if(joint == 1){
-            HAL_TIM_Base_Start_IT(&htim4);
+            HAL_TIM_Base_Start_IT(&htim2);
         }
         else if(joint == 2){
             HAL_TIM_Base_Start_IT(&htim3);
         }
         else if(joint == 3){
-            HAL_TIM_Base_Start_IT(&htim5);
+            HAL_TIM_Base_Start_IT(&htim4);
         }
         else if(joint == 4){
-            HAL_TIM_Base_Start_IT(&htim9);
+            HAL_TIM_Base_Start_IT(&htim8);
         }
         else if(joint == 5){
-            HAL_TIM_Base_Start_IT(&htim11);
+            HAL_TIM_Base_Start_IT(&htim9);
         }
     }
 

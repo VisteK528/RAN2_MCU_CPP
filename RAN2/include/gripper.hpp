@@ -6,6 +6,7 @@
 #include "gpio.h"
 #include "errors.hpp"
 #include <cmath>
+#include "utilities.hpp"
 
 /*  Operation_status information
  *

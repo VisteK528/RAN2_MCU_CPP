@@ -19,4 +19,9 @@
 #define millimeters2Inches(x) (x*0.0393700787f)
 #define inches2Millimeters(x) (x*25.4f)
 
+typedef struct {
+    GPIO_TypeDef* gpio_port;
+    uint16_t gpio_pin;
+} GPIO_PIN;
+
 #endif //ROBOTARMNUMBER2CPP_UTILITIES_HPP

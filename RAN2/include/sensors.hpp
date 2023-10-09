@@ -3,6 +3,7 @@
 
 #include "gpio.h"
 #include <iostream>
+#include "utilities.hpp"
 
 typedef enum{UP, DOWN} ENDSTOP_TYPE;
 
