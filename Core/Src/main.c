@@ -21,7 +21,6 @@
 #include "adc.h"
 #include "eth.h"
 #include "i2c.h"
-#include "sdio.h"
 #include "spi.h"
 #include "tim.h"
 #include "usart.h"
@@ -30,6 +29,8 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+
+#include "../../RAN2/alt_main.hpp"
 
 /* USER CODE END Includes */
 
@@ -108,9 +109,10 @@ int main(void)
   MX_TIM8_Init();
   MX_TIM9_Init();
   MX_TIM13_Init();
-  MX_SDIO_SD_Init();
   MX_USB_DEVICE_Init();
   /* USER CODE BEGIN 2 */
+
+  alt_main();
 
   /* USER CODE END 2 */
 

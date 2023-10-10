@@ -4,72 +4,21 @@
 #include <string>
 #include <iomanip>
 #include "spi.h"
+#include "usbd_cdc_if.h"
 
-#define LINE_MAX_LENGTH	80
+// USB Transmission variables
+uint8_t RAN3_USB_Receive_Buffer[2048];
+uint8_t RAN3_USB_Receive_Flag = 0;
+uint32_t RAN3_USB_Receive_Length = 0;
 
-static char line_buffer[LINE_MAX_LENGTH + 1];
-static uint32_t line_length;
 bool start = false;
 
 operation_status robot_operation_status;
 operation_status background_robot_operation_status;
-uint8_t to_be_displayed = 0;
 
 Robot my_robot;
 coordinates coords[6] = {};
-std::string coords_header;
-std::string coords_data;
 uint16_t counter = 0;
-
-static std::string generateCoordinatesHeader(){
-    std::stringstream display_string;
-    display_string << std::setfill (' ') << std::setw(10) << "X";
-    display_string << std::setfill (' ') << std::setw(10) << "Y";
-    display_string << std::setfill (' ') << std::setw(10) << "Z";
-    return display_string.str();
-}
-
-static std::string generateCoordinatesString(coordinates* coords){
-    std::stringstream display_string;
-    display_string << " " <<std::fixed << std::setprecision(4) << std::setfill (' ') << std::setw(9) << coords->x << " ";
-    display_string << std::fixed << std::setprecision(4) << std::setfill (' ') << std::setw(9) << coords->y << " ";
-    display_string << std::fixed << std::setprecision(4) << std::setfill (' ') << std::setw(9) << coords->z;
-    return display_string.str();
-}
-
-int __io_putchar(int ch)
-{
-    if (ch == '\n') {
-        uint8_t ch2 = '\r';
-        HAL_UART_Transmit(&huart3, &ch2, 1, HAL_MAX_DELAY);
-    }
-
-    HAL_UART_Transmit(&huart3, (uint8_t*)&ch, 1, HAL_MAX_DELAY);
-    return 1;
-}
-
-uint8_t line_append(uint8_t value)
-{
-    if (value == '\r' || value == '\n') {
-        if (line_length > 0) {
-            line_buffer[line_length] = '\0';
-            line_length = 0;
-            return 0;
-        }
-    }
-    else {
-        if (line_length >= LINE_MAX_LENGTH) {
-            line_length = 0;
-        }
-        if(((uint8_t)value == 8  || (uint8_t)value == 127 ) && line_length > 0){
-            line_buffer[--line_length] = 0;
-        }
-        else{
-            line_buffer[line_length++] = value;
-        }
-    }
-    return 1;
-}
 
 void HAL_SPI_TxCpltCallback(SPI_HandleTypeDef *hspi)
 {
@@ -80,23 +29,22 @@ void HAL_SPI_TxCpltCallback(SPI_HandleTypeDef *hspi)
 }
 
 int alt_main() {
-    HAL_TIM_Base_Start_IT(&htim1);
+    //HAL_TIM_Base_Start_IT(&htim1);
 
     my_robot = buildRobot();
     robot_operation_status = my_robot.systemsCheck(true);
     start = true;
 
-    SDP_Message message;
-    HAL_StatusTypeDef status;
+    HAL_StatusTypeDef status = HAL_BUSY;
     std::string response;
 
     while (1) {
-        status = SDP_Receive(&message, 1000);
-        if(status == HAL_OK){
 
+        if(RAN3_USB_Receive_Flag == 1){
             std::vector<std::string> commands = {};
-            commands = splitCommandFile(&message);
+            commands = splitCommandFile(RAN3_USB_Receive_Buffer, RAN3_USB_Receive_Length);
             for(auto& command: commands){
+                HAL_GPIO_TogglePin(LD3_GPIO_Port, LD3_Pin);
 
                 // Get ready status
                 robot_operation_status.result = in_progress;
@@ -114,19 +62,14 @@ int alt_main() {
                 response += "\r\n";
 
                 // Send response
-                SDP_Transmit((uint8_t*)response.c_str(), response.length());
+                CDC_Transmit_FS((uint8_t*)response.c_str(), response.length());
 
                 // Getting coordinates of End Effector from robot and then printing them on display, to be optimised
                 my_robot.getRobotArmCoordinates(coords);
-                coords_header = generateCoordinatesHeader();
-                coords_data = generateCoordinatesString(&coords[5]);
-
-                HAL_Delay(1000);
-
             }
             fflush(stdin);
             fflush(stdout);
-
+            RAN3_USB_Receive_Flag = 0;
         }
 
     }
@@ -141,7 +84,6 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim){
         if(my_robot.systemsCheck(false).result == success){
             background_robot_operation_status = my_robot.updateEncoders();
             if(background_robot_operation_status.result == failure){
-                to_be_displayed++;
             }
         }
     }

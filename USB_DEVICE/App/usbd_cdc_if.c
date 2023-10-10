@@ -263,6 +263,19 @@ static int8_t CDC_Receive_FS(uint8_t* Buf, uint32_t *Len)
   /* USER CODE BEGIN 6 */
   USBD_CDC_SetRxBuffer(&hUsbDeviceFS, &Buf[0]);
   USBD_CDC_ReceivePacket(&hUsbDeviceFS);
+
+  extern uint8_t RAN3_USB_Receive_Buffer[2048];
+  extern uint8_t RAN3_USB_Receive_Flag;
+  extern uint32_t RAN3_USB_Receive_Length;
+
+  // Reset variables to default values
+  memset(RAN3_USB_Receive_Buffer, 0, 2048);
+
+  // Set variables
+  RAN3_USB_Receive_Length = (*Len) + 1;
+  strlcpy(RAN3_USB_Receive_Buffer, Buf, (*Len)+1);
+  RAN3_USB_Receive_Flag = 1;
+
   return (USBD_OK);
   /* USER CODE END 6 */
 }
