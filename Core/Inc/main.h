@@ -60,6 +60,10 @@ void Error_Handler(void);
 #define B1_Pin GPIO_PIN_13
 #define B1_GPIO_Port GPIOC
 #define B1_EXTI_IRQn EXTI15_10_IRQn
+#define J3_DIR_Pin GPIO_PIN_0
+#define J3_DIR_GPIO_Port GPIOC
+#define J3_EN_Pin GPIO_PIN_1
+#define J3_EN_GPIO_Port GPIOC
 #define SAFEGUARD_PIN_Pin GPIO_PIN_2
 #define SAFEGUARD_PIN_GPIO_Port GPIOC
 #define SAFEGUARD_PIN_EXTI_IRQn EXTI2_IRQn
@@ -103,10 +107,6 @@ void Error_Handler(void);
 #define J2_ENDSTOP_GPIO_Port GPIOA
 #define J3_STEP_Pin GPIO_PIN_10
 #define J3_STEP_GPIO_Port GPIOA
-#define J3_DIR_Pin GPIO_PIN_11
-#define J3_DIR_GPIO_Port GPIOA
-#define J3_EN_Pin GPIO_PIN_12
-#define J3_EN_GPIO_Port GPIOA
 #define TMS_Pin GPIO_PIN_13
 #define TMS_GPIO_Port GPIOA
 #define TCK_Pin GPIO_PIN_14
