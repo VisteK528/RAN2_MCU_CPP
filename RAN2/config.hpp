@@ -152,8 +152,8 @@
     #define J4_ENCODER_HOMING_POSITION  120.f
     #define J4_ENCODER_DEG_PER_ROTATION 1.f
 
-    #define J4_ENCODER_HOMING
-    #define J4_SMART_ENCODER_HOMING
+    //#define J4_ENCODER_HOMING
+    //#define J4_SMART_ENCODER_HOMING
 #endif
 
 #endif
