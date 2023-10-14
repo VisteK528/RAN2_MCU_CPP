@@ -23,13 +23,16 @@
 
 typedef struct{
     float position;
+    float rawPosition;
     float velocity;
     float acceleration;
 } MagneticEncoderData;
 
+typedef enum{EncoderCW, EncoderCCW} encoder_direction;
+
 class MagneticEncoder{
 public:
-    MagneticEncoder(uint8_t encoderNumber, uint8_t encoderAddress, uint8_t channelNumber, I2C_HandleTypeDef* i2c, float homingPosition, float degPerRotation);
+    MagneticEncoder(uint8_t encoderNumber, uint8_t encoderAddress, uint8_t channelNumber, I2C_HandleTypeDef* i2c, float homingPosition, float degPerRotation, encoder_direction direction);
 
     /** @brief Checks if the encoder is ready for the work.
      * @returns
@@ -47,33 +50,44 @@ public:
 
     /** @brief Returns true if the encoder is homed, otherwise returns false.
      * */
-    bool isHomed();
+    bool isHomed() const;
 
-    /** @brief Updates position values (current position, totalAngle, rawAngle).
+    /** @brief Returns the direction in which encoder counts from 0 to 360 degrees
+     * */
+    encoder_direction getEncoderDirection() const;
+
+    /** @brief Updates position values (current position, totalAngle) if sensor is homed
      *  @returns None
      * */
     operation_status updatePosition();
 
-    /** @brief Returns current position of the encoder, always between 0 and 360 degrees.
+    /** @brief Updates raw position (raw angle) without offset or homing
+     *  @returns None
      * */
-    float getPosition();
+    operation_status updateRawAngle();
 
-    float getRawPosition();
+    /** @brief Returns current position of the encoder(with offsets), always between 0 and 360 degrees.
+     * */
+    float getPosition() const;
+
+    /** @brief Returns current raw position of the encoder(without offsets), always between 0 and 360 degrees.
+     * */
+    float getRawPosition() const;
     /** @brief Returns total angle of movement of the encoder, may be negative.
      * */
-    float getTotalAngle();
+    float getTotalAngle() const;
 
     // TODO To be done along with the getAcceleration function
     /** @brief Returns current velocity measured by the encoder, units not selected yet.
      * */
-    float getVelocity();
+    float getVelocity() const;
     /** @brief Returns current acceleration measured by the encoder, units not selected yet.
      * */
-    float getAcceleration();
+    float getAcceleration() const;
 
     /** @brief Returns current homing position angle related to the raw angle.
      * */
-    float getHomingPosition();
+    float getHomingPosition() const;
 
     /** @brief Sets new homing position related to the raw angle.
      *  @param homingPosition New homing position related to the raw angle, given in degrees.
@@ -86,7 +100,7 @@ public:
      *  which means how many rotations measured by the encoder are equal to one rotation of the joint.
      *  This function returns this value.
      * */
-    float getDegPerRotation();
+    float getDegPerRotation() const;
 
     /** @brief Updates position and calculates velocity and acceleration based on previous velocity
      * and acceleration measurements. This method should be used in ISR and be called every 100ms in order to get
@@ -121,6 +135,7 @@ private:
     volatile float acceleration = 0;
 
     float homingPosition = 0;
+    encoder_direction direction;
 
     uint8_t encoderNumber;
     uint8_t channelNumber;

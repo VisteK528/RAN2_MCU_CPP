@@ -39,6 +39,7 @@
 
 #ifdef J1_ENCODER
     #define J1_ENCODER_ADDRESS          0x36
+    #define J1_ENCODER_DIRECTION        CW
     #define J1_ENCODER_CHANNEL_NUMBER   0
     #define J1_ENCODER_HOMING_POSITION  0.f
     #define J1_ENCODER_DEG_PER_ROTATION 1.f
@@ -74,6 +75,7 @@
 
 #ifdef J2_ENCODER
     #define J2_ENCODER_ADDRESS          0x36
+    #define J2_ENCODER_DIRECTION        CW
     #define J2_ENCODER_CHANNEL_NUMBER   0
     #define J2_ENCODER_HOMING_POSITION  0.f
     #define J2_ENCODER_DEG_PER_ROTATION 1.f
@@ -109,6 +111,7 @@
 
 #ifdef J3_ENCODER
     #define J3_ENCODER_ADDRESS          0x36
+    #define J3_ENCODER_DIRECTION        CW
     #define J3_ENCODER_CHANNEL_NUMBER   0
     #define J3_ENCODER_HOMING_POSITION  0.f
     #define J3_ENCODER_DEG_PER_ROTATION 1.f
@@ -144,6 +147,7 @@
 
 #ifdef J4_ENCODER
     #define J4_ENCODER_ADDRESS          0x36
+    #define J4_ENCODER_DIRECTION        CCW
     #define J4_ENCODER_CHANNEL_NUMBER   3
     #define J4_ENCODER_HOMING_POSITION  120.f
     #define J4_ENCODER_DEG_PER_ROTATION 1.f
@@ -179,6 +183,7 @@
 
 #ifdef J5_ENCODER
     #define J5_ENCODER_ADDRESS          0x36
+    #define J5_ENCODER_DIRECTION        CW
     #define J5_ENCODER_CHANNEL_NUMBER   0
     #define J5_ENCODER_HOMING_POSITION  0.f
     #define J5_ENCODER_DEG_PER_ROTATION 1.f
@@ -214,6 +219,7 @@
 
 #ifdef J6_ENCODER
     #define J6_ENCODER_ADDRESS          0x36
+    #define J6_ENCODER_DIRECTION        CW
     #define J6_ENCODER_CHANNEL_NUMBER   2
     #define J6_ENCODER_HOMING_POSITION  28.f
     #define J6_ENCODER_DEG_PER_ROTATION 1.f

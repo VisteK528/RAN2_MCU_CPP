@@ -136,7 +136,8 @@ Robot buildRobot(){
                                                                                             J4_ENCODER_CHANNEL_NUMBER,
                                                                                             &hi2c1,
                                                                                             J4_ENCODER_HOMING_POSITION,
-                                                                                            J4_ENCODER_DEG_PER_ROTATION);
+                                                                                            J4_ENCODER_DEG_PER_ROTATION,
+                                                                                            J4_ENCODER_DIRECTION ? EncoderCCW: EncoderCW);
 
     std::unique_ptr<Driver> elbow_roll_driver = std::make_unique<drivers::Driver>(J4_JOINT_NUMBER, elbow_roll_step,
                                                                                   elbow_roll_dir, elbow_roll_en,
@@ -228,7 +229,8 @@ Robot buildRobot(){
                                                                                             J6_ENCODER_CHANNEL_NUMBER,
                                                                                             &hi2c1,
                                                                                             J6_ENCODER_HOMING_POSITION,
-                                                                                            J6_ENCODER_DEG_PER_ROTATION);
+                                                                                            J6_ENCODER_DEG_PER_ROTATION,
+                                                                                            J6_ENCODER_DIRECTION ? EncoderCCW: EncoderCW);
 
     std::unique_ptr<Driver> wrist_roll_driver = std::make_unique<drivers::Driver>(J6_JOINT_NUMBER, wrist_roll_step,
                                                                                   wrist_roll_dir, wrist_roll_en,

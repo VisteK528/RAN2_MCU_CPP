@@ -39,13 +39,15 @@ static operation_status operation_status_init_encoder(uint8_t encoder_number, op
 }
 
 MagneticEncoder::MagneticEncoder(uint8_t encoderNumber, uint8_t encoderAddress, uint8_t channelNumber,
-                                 I2C_HandleTypeDef *i2c, float homing_position, float degPerRotation) {
+                                 I2C_HandleTypeDef *i2c, float homingPosition, float degPerRotation,
+                                 encoder_direction direction) {
     this->encoderNumber = encoderNumber;
     this->encoderAddress = encoderAddress;
     this->channelNumber = channelNumber;
     this->i2c = i2c;
-    this->homingPosition = homing_position;
+    this->homingPosition = homingPosition;
     this->degPerRotation = degPerRotation;
+    this->direction = direction;
 }
 
 operation_status MagneticEncoder::checkEncoder() {
@@ -110,8 +112,12 @@ bool MagneticEncoder::homeEncoder() {
     return true;
 }
 
-bool MagneticEncoder::isHomed() {
+bool MagneticEncoder::isHomed() const{
     return this->homed;
+}
+
+encoder_direction MagneticEncoder::getEncoderDirection() const {
+    return this->direction;
 }
 
 operation_status MagneticEncoder::updatePosition() {
@@ -136,27 +142,38 @@ operation_status MagneticEncoder::updatePosition() {
     return operation_status_init_encoder(encoderNumber, failure, 0x05);
 }
 
-float MagneticEncoder::getPosition() {
+operation_status MagneticEncoder::updateRawAngle() {
+    selectI2CChannels(channelNumber);
+
+    if(as5600_check_presence(i2c, encoderAddress) == 1){
+        return operation_status_init_encoder(encoderNumber, failure, 0x02);
+    }
+
+    rawAngle = as5600_read_raw_angle(i2c, encoderAddress);
+    return operation_status_init_encoder(encoderNumber, success, 0x00);
+}
+
+float MagneticEncoder::getPosition() const{
     return this->currentPosition;
 }
 
-float MagneticEncoder::getRawPosition() {
+float MagneticEncoder::getRawPosition() const{
     return this->rawAngle;
 }
 
-float MagneticEncoder::getTotalAngle() {
+float MagneticEncoder::getTotalAngle() const{
     return this->totalAngle;
 }
 
-float MagneticEncoder::getVelocity() {
+float MagneticEncoder::getVelocity() const{
     return this->velocity;
 }
 
-float MagneticEncoder::getAcceleration() {
+float MagneticEncoder::getAcceleration() const{
     return this->acceleration;
 }
 
-float MagneticEncoder::getHomingPosition() {
+float MagneticEncoder::getHomingPosition() const{
     return this->homingPosition;
 }
 
@@ -165,7 +182,7 @@ void MagneticEncoder::setHomingPosition(float position) {
     homed = false;
 }
 
-float MagneticEncoder::getDegPerRotation() {
+float MagneticEncoder::getDegPerRotation() const{
     return this->degPerRotation;
 }
 

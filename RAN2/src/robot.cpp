@@ -534,6 +534,30 @@ static operation_status executeMGCODE(Robot& robot, std::string& response, uint1
                 return robot.disableJoints();
             }
         }
+        case 113: // Get raw encoder data
+        {
+            float position;
+            MagneticEncoderData data;
+
+            if(parse_result == 1) {
+                while(parse_result == 1){
+                    parse_result = parseMessage(&letter, &value, command_str, &counter);
+
+                    if(letter == 'E' && value >= 1 && value < 7){
+                        status = robot.getEncoderData((uint8_t)value, &data);
+                        response += "Raw E";
+                        response += std::to_string((uint8_t)value);
+                        response += ":";
+                        response += std::to_string(data.rawPosition);
+                        response += "\t";
+                        if(status.result ==  failure){
+                            return status;
+                        }
+                    }
+                }
+            }
+            return operation_status_init_gcode_reader(success, 0x00);
+        }
         case 114:
         {
             float position;

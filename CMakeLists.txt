@@ -52,14 +52,13 @@ endif ()
 
 include_directories(Core/Inc Drivers/STM32F4xx_HAL_Driver/Inc Drivers/STM32F4xx_HAL_Driver/Inc/Legacy
         Drivers/CMSIS/Device/ST/STM32F4xx/Include Drivers/CMSIS/Include  Core/Inc Drivers/STM32F4xx_HAL_Driver/Inc
-        Drivers/STM32F4xx_HAL_Driver/Inc/Legacy Drivers/CMSIS/Device/ST/STM32F4xx/Include Drivers/CMSIS/Include
-        libraries/hagl/include libraries/NumericalMath/include libraries/tft_lcd/include libraries/tft_lcd/fonts)
+        Drivers/STM32F4xx_HAL_Driver/Inc/Legacy Drivers/CMSIS/Device/ST/STM32F4xx/Include Drivers/CMSIS/Include libraries/NumericalMath/include)
 link_directories(libraries/NumericalMath/lib)
 
 add_definitions(-DDEBUG -DUSE_HAL_DRIVER -DSTM32F401xE)
 
-file(GLOB_RECURSE SOURCES "RAN2/*.*" "Core/*.*" "CMSIS/*.*" "Drivers/*.*" "libraries/hagl/*.*"
-        "libraries/NumericalMath/include/*.h" "libraries/tft_lcd/*.*" "libraries/SDP/*.*")
+file(GLOB_RECURSE SOURCES "RAN2/*.*" "Core/*.*" "CMSIS/*.*" "Drivers/*.*"
+        "libraries/NumericalMath/include/*.h" "libraries/SDP/*.*")
 
 set(LINKER_SCRIPT ${CMAKE_SOURCE_DIR}/STM32F401RETX_FLASH.ld)
 

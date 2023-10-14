@@ -354,14 +354,24 @@ operation_status Joint::homeJoint() {
 
         if(smart_encoder_homing)
         {
-            encoder->updatePosition();
+            encoder->updateRawAngle();
             float position = encoder->getRawPosition();
             float homing_position = encoder->getHomingPosition();
 
             if (position - homing_position < 0) {
-                first_direction = ANTICLOCKWISE;
+                if(encoder->getEncoderDirection() == EncoderCW){
+                    first_direction = ANTICLOCKWISE;
+                }
+                else{
+                    first_direction = CLOCKWISE;
+                }
             } else {
-                first_direction = CLOCKWISE;
+                if(encoder->getEncoderDirection() == EncoderCW){
+                    first_direction = CLOCKWISE;
+                }
+                else{
+                    first_direction = ANTICLOCKWISE;
+                }
             }
         }
 
@@ -446,9 +456,14 @@ operation_status Joint::updateEncoder() {
 
 operation_status Joint::getEncoderData(MagneticEncoderData *data) {
     if(encoder != nullptr){
+        operation_status encoder_status = encoder->checkEncoder();
+        if(encoder_status.result != success){
+            return encoder_status;
+        }
         data->position = encoder->getPosition();
         data->velocity = encoder->getVelocity();
         data->acceleration = encoder->getAcceleration();
+        data->rawPosition = encoder->getRawPosition();
         return operation_status_init_joint(joint_number, success, 0x00);
     }
     return operation_status_init_joint(joint_number, failure, 0x05);

@@ -1,6 +1,3 @@
-[submodule "libraries/hagl"]
-	path = libraries/hagl
-	url = https://github.com/tuupola/hagl
 [submodule "libraries/NumericalMath"]
 	path = libraries/NumericalMath
 	url = git@github.com:VisteK528/NumericalMath.git
